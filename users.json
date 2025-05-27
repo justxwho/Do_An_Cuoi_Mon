@@ -1,0 +1,20 @@
+[
+    {
+        "username": "hanam0912",
+        "password": "dontfallinl0v3",
+        "name": "Nam Hà",
+        "role": "Người dùng"
+    },
+    {
+        "username": "admin",
+        "password": "admin123",
+        "name": "Hà Nhất Nam",
+        "role": "Quản trị viên"
+    },
+    {
+        "username": "nam",
+        "password": "nam123",
+        "name": "Nam Hà",
+        "role": "user"
+    }
+]
