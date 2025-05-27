@@ -10,11 +10,5 @@
         "password": "admin123",
         "name": "Hà Nhất Nam",
         "role": "Quản trị viên"
-    },
-    {
-        "username": "nam",
-        "password": "nam123",
-        "name": "Nam Hà",
-        "role": "user"
     }
 ]

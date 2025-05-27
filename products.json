@@ -18,6 +18,12 @@
         "qty": "10"
     },
     {
+        "id": "4",
+        "name": "Mens Casual Slim Fit",
+        "price": "15.99",
+        "qty": "10"
+    },
+    {
         "id": "5",
         "name": "John Hardy Women's Legends Naga Gold & Silver Dragon Station Chain Bracelet",
         "price": "695",

@@ -80,6 +80,35 @@ class ProductManagerApp:
         self.current_user = None
         self.products_tree = None
         self.avatar_button = None
+        self.account_popup = None
+        self.root.bind("<Button-1>", self.handle_click_outside)
+        self.build_login()
+
+    def toggle_account_info(self):
+        if self.account_popup and self.account_popup.winfo_exists():
+            self.account_popup.destroy()
+        else:
+            self.account_popup = tk.Toplevel(self.root)
+            self.account_popup.geometry("200x100")
+            self.account_popup.overrideredirect(True)
+            x = self.avatar_button.winfo_rootx()
+            y = self.avatar_button.winfo_rooty() + self.avatar_button.winfo_height()
+            self.account_popup.geometry(f"200x100+{x}+{y}")
+            tk.Label(self.account_popup, text=f"👤 {self.current_user['name']}\nVai trò: {self.current_user['role']}", anchor="w").pack(fill='x', padx=10, pady=5)
+            tk.Button(self.account_popup, text="Đăng xuất", command=self.logout).pack(pady=5)
+
+    def handle_click_outside(self, event):
+        if self.account_popup and self.account_popup.winfo_exists():
+            if not (self.account_popup.winfo_rootx() <= event.x_root <= self.account_popup.winfo_rootx() + self.account_popup.winfo_width() and
+                    self.account_popup.winfo_rooty() <= event.y_root <= self.account_popup.winfo_rooty() + self.account_popup.winfo_height()):
+                if not (self.avatar_button.winfo_rootx() <= event.x_root <= self.avatar_button.winfo_rootx() + self.avatar_button.winfo_width() and
+                        self.avatar_button.winfo_rooty() <= event.y_root <= self.avatar_button.winfo_rooty() + self.avatar_button.winfo_height()):
+                    self.account_popup.destroy()
+
+    def logout(self):
+        self.current_user = None
+        if self.account_popup:
+            self.account_popup.destroy()
         self.build_login()
 
     def build_login(self):
@@ -147,7 +176,7 @@ class ProductManagerApp:
             messagebox.showerror("Lỗi", "Tên đăng nhập đã tồn tại")
             return
 
-        users.append({'username': username, 'password': password, 'name': name, 'role': 'user'})
+        users.append({'username': username, 'password': password, 'name': name, 'role': 'Người dùng'})
         JSONHandler.write(USERS_FILE, users)
         messagebox.showinfo("Thành công", "Đăng ký thành công")
         self.build_login()
@@ -175,8 +204,8 @@ class ProductManagerApp:
 
         avatar_frame = tk.Frame(top_bar)
         avatar_frame.pack(side='right', padx=10)
-        avatar_img = Image.open("avatar.png") if os.path.exists("avatar.png") else Image.new('RGB', (40, 40), 'gray')
-        avatar_img = avatar_img.resize((40, 40))
+        avatar_img = Image.open("avatar.png") if os.path.exists("avatar.png") else Image.new('RGB', (50, 50), 'gray')
+        avatar_img = avatar_img.resize((50, 50))
         avatar = ImageTk.PhotoImage(avatar_img)
 
         self.avatar_button = tk.Label(avatar_frame, image=avatar, cursor="hand2")
@@ -184,21 +213,17 @@ class ProductManagerApp:
         self.avatar_button.pack()
         self.avatar_button.bind("<Button-1>", self.show_user_menu)
 
-        self.user_menu = tk.Frame(self.root, relief='raised', bd=1)
-        self.user_menu.place(x=900, y=40)
-        self.user_menu.lower()
-        tk.Label(self.user_menu, text=self.current_user['name'], font=('Arial', 12)).pack(pady=5)
-        tk.Button(self.user_menu, text="Thông tin cá nhân", command=self.show_user_info).pack(fill='x')
-        tk.Button(self.user_menu, text="Đăng xuất", command=self.build_login).pack(fill='x')
-
         self.build_product_table()
 
         if self.current_user['role'] == 'Quản trị viên':
-            tk.Button(self.root, text="Thêm", command=self.add_product_popup).pack(pady=5)
-            tk.Button(self.root, text="Xóa", command=self.delete_product).pack(pady=5)
-            tk.Button(self.root, text="Tạo API", command=self.fetch_api_and_reload).pack(pady=5)
+            tk.Button(self.root, text="Thêm", width=10, command=self.add_product_popup).pack(side='left', padx=10)
+            tk.Button(self.root, text="Sửa", width=10, command=self.edit_product).pack(side='left', padx=10)
+            tk.Button(self.root, text="Xóa", width=10, command=self.delete_product).pack(side='left', padx=10)
+            api_button_frame = tk.Frame(self.root)
+            api_button_frame.pack(pady=5)
+            tk.Button(api_button_frame, text="Tạo dữ liệu từ API", width=20, command=self.fetch_api_and_reload).pack()
         else:
-            tk.Button(self.root, text="Thêm", command=self.add_product_popup).pack(pady=5)
+            tk.Button(self.root, text="Thêm", width=10, command=self.add_product_popup).pack(side='left', padx=10)
 
     def show_user_menu(self, event):
         self.user_menu.lift()
@@ -207,11 +232,28 @@ class ProductManagerApp:
         messagebox.showinfo("Thông tin cá nhân", f"Tên: {self.current_user['name']}\nVai trò: {self.current_user['role']}")
 
     def build_product_table(self):
+        avatar_frame = tk.Frame(self.root)
+        avatar_frame.pack(anchor='ne', padx=10, pady=5)
+        self.avatar_button = tk.Button(avatar_frame, text="👤", command=self.toggle_account_info)
+        self.avatar_button.pack()
         columns = ("id", "name", "price", "qty")
         self.products_tree = ttk.Treeview(self.root, columns=columns, show="headings")
+        column_names = {
+            "id": "Mã sản phẩm",
+            "name": "Tên sản phẩm",
+            "price": "Giá",
+            "qty": "Số lượng"
+        }
+        column_widths = {
+            "id": 100,
+            "name": 400,
+            "price": 100,
+            "qty": 100
+        }
         for col in columns:
-            self.products_tree.heading(col, text=col.capitalize())
-            self.products_tree.column(col, anchor='center')
+            self.products_tree.heading(col, text=column_names[col])
+            align = 'w' if col == 'name' else 'center'
+            self.products_tree.column(col, anchor=align, width=column_widths[col])
         self.products_tree.pack(expand=True, fill='both')
 
         self.load_products_to_tree()
@@ -258,6 +300,49 @@ class ProductManagerApp:
 
         tk.Button(popup, text="Thêm", command=add).grid(row=4, columnspan=2, pady=5)
 
+    def edit_product(self):
+        selected = self.products_tree.selection()
+        if not selected:
+            messagebox.showwarning("Chọn sản phẩm", "Vui lòng chọn sản phẩm để sửa")
+            return
+        values = self.products_tree.item(selected[0], 'values')
+        popup = tk.Toplevel(self.root)
+        popup.title("Sửa sản phẩm")
+        tk.Label(popup, text="ID").grid(row=0, column=0)
+        tk.Label(popup, text="Tên").grid(row=1, column=0)
+        tk.Label(popup, text="Giá").grid(row=2, column=0)
+        tk.Label(popup, text="Số lượng").grid(row=3, column=0)
+
+        id_entry = tk.Entry(popup)
+        id_entry.insert(0, values[0])
+        id_entry.grid(row=0, column=1)
+
+        name_entry = tk.Entry(popup)
+        name_entry.insert(0, values[1])
+        name_entry.grid(row=1, column=1)
+
+        price_entry = tk.Entry(popup)
+        price_entry.insert(0, values[2])
+        price_entry.grid(row=2, column=1)
+
+        qty_entry = tk.Entry(popup)
+        qty_entry.insert(0, values[3])
+        qty_entry.grid(row=3, column=1)
+
+        def save_edit():
+            products = JSONHandler.read(DATA_FILE)
+            for product in products:
+                if product['id'] == values[0]:
+                    product['name'] = name_entry.get()
+                    product['price'] = price_entry.get()
+                    product['qty'] = qty_entry.get()
+                    break
+            JSONHandler.write(DATA_FILE, products)
+            self.load_products_to_tree()
+            popup.destroy()
+
+        tk.Button(popup, text="Lưu", command=save_edit).grid(row=4, columnspan=2)
+
     def delete_product(self):
         name = simpledialog.askstring("Xóa sản phẩm", "Nhập tên sản phẩm để xoá:")
         if not name:
@@ -268,6 +353,7 @@ class ProductManagerApp:
             products = [p for p in products if p['name'] != name]
             JSONHandler.write(DATA_FILE, products)
             self.load_products_to_tree()
+            messagebox.showinfo("Thông báo", "Xóa thành công !")
 
     def search_product(self, keyword):
         products = JSONHandler.read(DATA_FILE)
