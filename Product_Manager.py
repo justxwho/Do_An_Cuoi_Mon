@@ -245,10 +245,10 @@ class ProductManagerApp:
             "qty": "Số lượng"
         }
         column_widths = {
-            "id": 100,
-            "name": 400,
+            "id": 50,
+            "name": 450,
             "price": 100,
-            "qty": 100
+            "qty": 50
         }
         for col in columns:
             self.products_tree.heading(col, text=column_names[col])
