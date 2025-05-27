@@ -82,6 +82,7 @@ class ProductManagerApp:
         self.avatar_button = None
         self.account_popup = None
         self.root.bind("<Button-1>", self.handle_click_outside)
+        self.background_image = ImageTk.PhotoImage(Image.open("background.jpg").resize((1000, 600)))
         self.build_login()
 
     def toggle_account_info(self):
@@ -113,20 +114,23 @@ class ProductManagerApp:
 
     def build_login(self):
         self.clear_window()
-        frame = tk.Frame(self.root)
-        frame.pack(expand=True)
+        bg_label = tk.Label(self.root, image=self.background_image)
+        bg_label.place(x=0, y=0, relwidth=1, relheight=1)
 
-        tk.Label(frame, text="Đăng nhập", font=('Arial', 20)).grid(row=0, columnspan=2, pady=10)
+        frame = tk.Frame(self.root, bg='white')
+        frame.place(relx=0.5, rely=0.5, anchor='center')
 
-        tk.Label(frame, text="Tên đăng nhập").grid(row=1, column=0, sticky='e', padx=10, pady=5)
+        tk.Label(frame, text="Đăng nhập", font=('Arial', 20), bg='white').grid(row=0, columnspan=2, pady=10)
+
+        tk.Label(frame, text="Tên đăng nhập", bg='white').grid(row=1, column=0, sticky='e', padx=10, pady=5)
         self.username_entry = tk.Entry(frame, font=('Arial', 12))
         self.username_entry.grid(row=1, column=1, pady=5)
 
-        tk.Label(frame, text="Mật khẩu").grid(row=2, column=0, sticky='e', padx=10, pady=5)
+        tk.Label(frame, text="Mật khẩu", bg='white').grid(row=2, column=0, sticky='e', padx=10, pady=5)
         self.password_entry = tk.Entry(frame, show='*', font=('Arial', 12))
         self.password_entry.grid(row=2, column=1, pady=5)
 
-        button_frame = tk.Frame(frame)
+        button_frame = tk.Frame(frame, bg='white')
         button_frame.grid(row=3, columnspan=2, pady=10)
 
         tk.Button(button_frame, text="Đăng nhập", width=15, command=self.login).pack(side='left', padx=10)
@@ -134,28 +138,31 @@ class ProductManagerApp:
 
     def build_register(self):
         self.clear_window()
-        frame = tk.Frame(self.root)
-        frame.pack(expand=True)
+        bg_label = tk.Label(self.root, image=self.background_image)
+        bg_label.place(x=0, y=0, relwidth=1, relheight=1)
 
-        tk.Label(frame, text="Đăng ký tài khoản", font=('Arial', 20)).grid(row=0, columnspan=2, pady=10)
+        frame = tk.Frame(self.root, bg='white')
+        frame.place(relx=0.5, rely=0.5, anchor='center')
 
-        tk.Label(frame, text="Tên người dùng").grid(row=1, column=0, sticky='e', padx=10, pady=5)
+        tk.Label(frame, text="Đăng ký tài khoản", font=('Arial', 20), bg='white').grid(row=0, columnspan=2, pady=10)
+
+        tk.Label(frame, text="Tên người dùng", bg='white').grid(row=1, column=0, sticky='e', padx=10, pady=5)
         self.name_entry = tk.Entry(frame, font=('Arial', 12))
         self.name_entry.grid(row=1, column=1, pady=5)
 
-        tk.Label(frame, text="Tên đăng nhập").grid(row=2, column=0, sticky='e', padx=10, pady=5)
+        tk.Label(frame, text="Tên đăng nhập", bg='white').grid(row=2, column=0, sticky='e', padx=10, pady=5)
         self.reg_username_entry = tk.Entry(frame, font=('Arial', 12))
         self.reg_username_entry.grid(row=2, column=1, pady=5)
 
-        tk.Label(frame, text="Mật khẩu").grid(row=3, column=0, sticky='e', padx=10, pady=5)
+        tk.Label(frame, text="Mật khẩu", bg='white').grid(row=3, column=0, sticky='e', padx=10, pady=5)
         self.reg_password_entry = tk.Entry(frame, show='*', font=('Arial', 12))
         self.reg_password_entry.grid(row=3, column=1, pady=5)
 
-        tk.Label(frame, text="Nhập lại mật khẩu").grid(row=4, column=0, sticky='e', padx=10, pady=5)
+        tk.Label(frame, text="Nhập lại mật khẩu", bg='white').grid(row=4, column=0, sticky='e', padx=10, pady=5)
         self.reg_confirm_entry = tk.Entry(frame, show='*', font=('Arial', 12))
         self.reg_confirm_entry.grid(row=4, column=1, pady=5)
 
-        button_frame = tk.Frame(frame)
+        button_frame = tk.Frame(frame, bg='white')
         button_frame.grid(row=5, columnspan=2, pady=10)
 
         tk.Button(button_frame, text="Xác nhận", width=15, command=self.register_user).pack(side='left', padx=10)
@@ -218,7 +225,7 @@ class ProductManagerApp:
         if self.current_user['role'] == 'Quản trị viên':
             tk.Button(self.root, text="Thêm", width=10, command=self.add_product_popup).pack(side='left', padx=10)
             tk.Button(self.root, text="Sửa", width=10, command=self.edit_product).pack(side='left', padx=10)
-            tk.Button(self.root, text="Xóa", width=10, command=self.delete_product).pack(side='left', padx=10)
+            tk.Button(self.root, text="Xóa", width=10, bg="red", fg="white", command=self.delete_product).pack(side='left', padx=10)
             api_button_frame = tk.Frame(self.root)
             api_button_frame.pack(pady=5)
             tk.Button(api_button_frame, text="Tạo dữ liệu từ API", width=20, command=self.fetch_api_and_reload).pack()
