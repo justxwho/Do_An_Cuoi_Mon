@@ -1,20 +1,27 @@
 import tkinter as tk
 import customtkinter as ctk
-from customtkinter import *
-from tkinter import messagebox, ttk, simpledialog
-from PIL import Image, ImageTk, ImageDraw, ImageOps
-from tkinter import filedialog
-import json
-import os
+from tkinter import messagebox, ttk, simpledialog, filedialog
+from PIL import Image, ImageTk
+import json, os
 import requests
 import urllib3
+import hashlib
 
 DATA_FILE = 'products.json'
 USERS_FILE = 'users.json'
+AVATAR_FOLDER = "avatars"
+os.makedirs(AVATAR_FOLDER, exist_ok=True)
 
-# Tạo thư mục avatars riêng
-if not os.path.exists("avatars"):
-    os.makedirs("avatars")
+# Hash mật khẩu
+def hash_password(password):
+    return hashlib.sha256(password.encode()).hexdigest()
+
+def load_image(path, size):
+    try:
+        img = Image.open(path).resize(size)
+    except:
+        img = Image.new('RGB', size, 'gray')
+    return ImageTk.PhotoImage(img)
 
 # Tạo file dữ liệu nếu chưa tồn tại
 if not os.path.exists(DATA_FILE):
@@ -92,19 +99,6 @@ class ProductManagerApp:
         self.background_image = ImageTk.PhotoImage(Image.open("background.jpg").resize((1000, 600)))
         self.build_login()
 
-    def choose_avatar(self):
-        file_path = filedialog.askopenfilename(filetypes=[("Image Files", "*.png *.jpg *.jpeg *.gif")])
-        if file_path:
-            try:
-                img = Image.open(file_path)
-                img = img.resize((50, 50))
-                img.save("avatar.png")
-                self.build_main_interface()
-                if self.account_popup:
-                    self.account_popup.destroy()
-            except Exception as e:
-                messagebox.showerror("Lỗi", f"Không thể đặt ảnh avatar: {e}")
-
     def toggle_account_info(self):
         if self.account_popup and self.account_popup.winfo_exists():
             self.account_popup.destroy()
@@ -117,8 +111,8 @@ class ProductManagerApp:
             self.account_popup.geometry(f"200x130+{x}+{y}")
             ctk.CTkLabel(self.account_popup, text=f"👤 {self.current_user['name']}\nVai trò: {self.current_user['role']}", font=('Arial', 12, 'bold'), 
                         anchor="center").pack(fill='x', padx=10, pady=5)
-            ctk.CTkButton(self.account_popup, text="Chọn ảnh", corner_radius=32, font=('Arial', 10, 'bold'), command=self.choose_avatar).pack(pady=2)
-            ctk.CTkButton(self.account_popup, text="Đăng xuất", corner_radius=32, font=('Arial', 10, 'bold'), command=self.logout).pack(pady=2)
+            ctk.CTkButton(self.account_popup, text="Chọn ảnh", corner_radius=32, font=('Arial', 12, 'bold'), command=self.choose_avatar).pack(pady=10)
+            ctk.CTkButton(self.account_popup, text="Đăng xuất", corner_radius=32, font=('Arial', 12, 'bold'), command=self.logout).pack(pady=2)
 
 
     def handle_click_outside(self, event):
@@ -189,14 +183,16 @@ class ProductManagerApp:
         button_frame = tk.Frame(frame, bg='white')
         button_frame.grid(row=5, columnspan=2, pady=10)
 
-        ctk.CTkButton(button_frame, text="Xác nhận", width=15, corner_radius=32, font=("Arial", 12, "bold"), command=self.register_user).pack(side='left', padx=10)
-        ctk.CTkButton(button_frame, text="Quay lại", width=15, corner_radius=32, font=("Arial", 12, "bold"), command=self.build_login).pack(side='right', padx=10)
+        ctk.CTkButton(button_frame, text="Xác nhận", width=15, corner_radius=32, font=("Arial", 12, "bold"), 
+                    command=self.register_user).pack(side='left', padx=10)
+        ctk.CTkButton(button_frame, text="Quay lại", width=15, corner_radius=32, font=("Arial", 12, "bold"),
+                    command=self.build_login).pack(side='right', padx=10)
 
     def register_user(self):
         name = self.name_entry.get()
         username = self.reg_username_entry.get()
-        password = self.reg_password_entry.get()
-        confirm = self.reg_confirm_entry.get()
+        password = hash_password(self.reg_password_entry.get())
+        confirm = hash_password(self.reg_confirm_entry.get())
 
         if password != confirm:
             messagebox.showerror("Lỗi", "Mật khẩu không khớp")
@@ -214,14 +210,14 @@ class ProductManagerApp:
 
     def login(self):
         username = self.username_entry.get()
-        password = self.password_entry.get()
+        password = hash_password(self.password_entry.get())
         users = JSONHandler.read(USERS_FILE)
-        for user in users:
-            if user['username'] == username and user['password'] == password:
-                self.current_user = user
-                self.build_main_interface()
-                return
-        messagebox.showerror("Lỗi", "Sai tên đăng nhập hoặc mật khẩu")
+        user = next((u for u in users if u['username'] == username and u['password'] == password), None)
+        if user:
+            self.current_user = user
+            self.build_main_interface()
+        else:
+            messagebox.showerror("Lỗi", "Sai thông tin đăng nhập")
 
     def build_main_interface(self):
         self.clear_window()
@@ -229,34 +225,42 @@ class ProductManagerApp:
         top_bar = tk.Frame(self.root)
         top_bar.pack(fill='x', pady=5)
 
+        font_setting_search = ("Arial", 12, "bold")
         search_entry = tk.Entry(top_bar, font=('Arial', 12))
         search_entry.pack(side='left', padx=10, pady=5)
-        tk.Button(top_bar, text="Tìm kiếm", font=("Arial", 10, "bold"), command=lambda: self.search_product(search_entry.get())).pack(side='left')
+        ctk.CTkButton(top_bar, text="Tìm kiếm", corner_radius=10, text_color="black", fg_color="white", border_color="black", 
+                border_width=2, hover_color="#498EFD", font=font_setting_search,
+                command=lambda: self.search_product(search_entry.get())).pack(side='left')
 
-        avatar_frame = tk.Frame(top_bar)
-        avatar_frame.pack(side='right', padx=10)
-        avatar_img = Image.open("avatar.png") if os.path.exists("avatar.png") else Image.new('RGB', (50, 50), 'gray')
-        avatar_img = avatar_img.resize((50, 50))
-        avatar = ImageTk.PhotoImage(avatar_img)
-
-        self.avatar_button = tk.Label(avatar_frame, image=avatar, cursor="hand2")
-        self.avatar_button.image = avatar
-        self.avatar_button.pack()
-        self.avatar_button.bind("<Button-1>", self.show_user_menu)
-
+        avatar_path = os.path.join(AVATAR_FOLDER, f"{self.current_user['username']}.png")
+        avatar_img = load_image(avatar_path, (50, 50))
+        avatar_label = tk.Label(top_bar, image=avatar_img)
+        avatar_label.image = avatar_img
+        avatar_label.pack(side="right", padx=10, pady=5)
+        
         self.build_product_table()
 
+        font_settings = ("Arial", 12, "bold")
+
         if self.current_user['role'] == 'Quản trị viên':
-            font_settings = ("Arial", 12, "bold")
-            ctk.CTkButton(self.root, text="Thêm", width=10, corner_radius=32, font=font_settings, command=self.add_product_popup).pack(side='left', padx=10)
-            ctk.CTkButton(self.root, text="Sửa", width=10, corner_radius=32, font=font_settings, command=self.edit_product).pack(side='left', padx=10)
-            ctk.CTkButton(self.root, text="Xóa", width=10, corner_radius=32, font=font_settings, fg_color="#ff0000", hover_color="#CD0202", command=self.delete_product).pack(side='left', padx=10)
+            ctk.CTkButton(self.root, text="Thêm", width=10, corner_radius=32, font=font_settings, 
+                        command=self.add_product_popup).pack(side='left', padx=10)
+            ctk.CTkButton(self.root, text="Sửa", width=10, corner_radius=32, font=font_settings, 
+                        command=self.edit_product).pack(side='left', padx=10)
+            ctk.CTkButton(self.root, text="Xóa", width=10, corner_radius=32, font=font_settings, 
+                        fg_color="#ff0000", hover_color="#CD0202", command=self.delete_product).pack(side='left', padx=10)
             api_button_frame = tk.Frame(self.root)
             api_button_frame.pack(pady=5)
-            ctk.CTkButton(api_button_frame, text="Tạo dữ liệu từ API", width=20, corner_radius=32, font=font_settings, command=self.fetch_api_and_reload).pack()
+            ctk.CTkButton(api_button_frame, text="Tạo dữ liệu từ API", width=20, corner_radius=32, font=font_settings, 
+                        command=self.fetch_api_and_reload).pack()
         else:
-            tk.Button(self.root, text="Thêm", width=10, command=self.add_product_popup).pack(side='left', padx=10)
-
+            ctk.CTkButton(self.root, text="Thêm", width=10, corner_radius=32, font=font_settings, 
+                        command=self.add_product_popup).pack(side='left', padx=100)
+            api_button_frame = tk.Frame(self.root)
+            api_button_frame.pack(pady=5)
+            ctk.CTkButton(api_button_frame, text="Tạo dữ liệu từ API", width=20, corner_radius=32, font=font_settings, 
+                        command=self.fetch_api_and_reload).pack()
+            
     def show_user_menu(self, event):
         self.user_menu.lift()
 
@@ -287,21 +291,23 @@ class ProductManagerApp:
             align = 'w' if col == 'name' else 'center'
             self.products_tree.column(col, anchor=align, width=column_widths[col])
         self.products_tree.pack(expand=True, fill='both')
+        scrollbar = ttk.Scrollbar(self.products_tree, orient="vertical", command=self.products_tree.yview)
+        self.products_tree.configure(yscrollcommand=scrollbar.set)
+        scrollbar.pack(side="right", fill="y")
 
         self.load_products_to_tree()
 
     def load_products_to_tree(self):
-        for row in self.products_tree.get_children():
-            self.products_tree.delete(row)
-        products = JSONHandler.read(DATA_FILE)
-        for product in products:
-            self.products_tree.insert('', 'end', values=(product['id'], product['name'], product['price'], product['qty']))
+        self.products_tree.delete(*self.products_tree.get_children())
+        for p in JSONHandler.read(DATA_FILE):
+            price_str = f"{p['price']} USD"
+            self.products_tree.insert('', 'end', values=(p['id'], p['name'], price_str, p['qty']))
 
     def add_product_popup(self):
         popup = tk.Toplevel(self.root)
         popup.title("Thêm sản phẩm")
-        tk.Label(popup, text="ID").grid(row=0, column=0)
-        tk.Label(popup, text="Tên").grid(row=1, column=0)
+        tk.Label(popup, text="Mã sản phẩm").grid(row=0, column=0)
+        tk.Label(popup, text="Tên sản phẩm").grid(row=1, column=0)
         tk.Label(popup, text="Giá").grid(row=2, column=0)
         tk.Label(popup, text="Số lượng").grid(row=3, column=0)
 
@@ -340,8 +346,8 @@ class ProductManagerApp:
         values = self.products_tree.item(selected[0], 'values')
         popup = tk.Toplevel(self.root)
         popup.title("Sửa sản phẩm")
-        tk.Label(popup, text="ID").grid(row=0, column=0)
-        tk.Label(popup, text="Tên").grid(row=1, column=0)
+        tk.Label(popup, text="Mã sản phẩm").grid(row=0, column=0)
+        tk.Label(popup, text="Tên sản phẩm").grid(row=1, column=0)
         tk.Label(popup, text="Giá").grid(row=2, column=0)
         tk.Label(popup, text="Số lượng").grid(row=3, column=0)
 
@@ -376,25 +382,39 @@ class ProductManagerApp:
         tk.Button(popup, text="Lưu", command=save_edit).grid(row=4, columnspan=2)
 
     def delete_product(self):
-        name = simpledialog.askstring("Xóa sản phẩm", "Nhập tên sản phẩm để xoá:")
-        if not name:
+        selected = self.products_tree.selection()
+        if not selected:
+            messagebox.showwarning("Chọn sản phẩm", "Vui lòng chọn sản phẩm để xóa")
             return
-        confirm = messagebox.askyesno("Xác nhận", f"Bạn có chắc chắn muốn xoá sản phẩm '{name}'?")
+        confirm = messagebox.askyesno("Xác nhận", "Bạn có chắc chắn muốn xóa sản phẩm này?")
         if confirm:
+            values = self.products_tree.item(selected[0], 'values')
             products = JSONHandler.read(DATA_FILE)
-            products = [p for p in products if p['name'] != name]
+            products = [p for p in products if p['id'] != values[0]]
             JSONHandler.write(DATA_FILE, products)
             self.load_products_to_tree()
-            messagebox.showinfo("Thông báo", "Xóa thành công !")
 
     def search_product(self, keyword):
+        keyword = keyword.lower()
         products = JSONHandler.read(DATA_FILE)
-        matched = [p for p in products if keyword.lower() in p['name'].lower()]
-        if not matched:
-            messagebox.showinfo("Không tìm thấy", "Không có sản phẩm nào phù hợp")
-            return
-        info = "\n".join([f"ID: {p['id']}\nTên: {p['name']}\nGiá: {p['price']}\nSố lượng: {p['qty']}" for p in matched])
-        messagebox.showinfo("Kết quả tìm kiếm", info)
+        filtered = [p for p in products if keyword in p['name'].lower()]
+        self.products_tree.delete(*self.products_tree.get_children())
+        for p in filtered:
+            price_str = f"{p['price']} USD"
+            self.products_tree.insert('', 'end', values=(p['id'], p['name'], price_str, p['qty']))
+
+    def choose_avatar(self):
+        file_path = filedialog.askopenfilename(filetypes=[("Image Files", "*.png *.jpg *.jpeg *.gif")])
+        if file_path:
+            try:
+                img = Image.open(file_path).resize((50, 50))
+                avatar_path = os.path.join(AVATAR_FOLDER, f"{self.current_user['username']}.png")
+                img.save(avatar_path)
+                self.build_main_interface()
+                if self.account_popup:
+                    self.account_popup.destroy()
+            except Exception as e:
+                messagebox.showerror("Lỗi", f"Không thể đặt ảnh avatar: {e}")
 
     def fetch_api_and_reload(self):
         if ProductFetcher.fetch_from_api():
