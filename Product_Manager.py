@@ -1,6 +1,9 @@
 import tkinter as tk
+import customtkinter as ctk
+from customtkinter import *
 from tkinter import messagebox, ttk, simpledialog
-from PIL import Image, ImageTk
+from PIL import Image, ImageTk, ImageDraw, ImageOps
+from tkinter import filedialog
 import json
 import os
 import requests
@@ -8,6 +11,10 @@ import urllib3
 
 DATA_FILE = 'products.json'
 USERS_FILE = 'users.json'
+
+# Tạo thư mục avatars riêng
+if not os.path.exists("avatars"):
+    os.makedirs("avatars")
 
 # Tạo file dữ liệu nếu chưa tồn tại
 if not os.path.exists(DATA_FILE):
@@ -85,6 +92,19 @@ class ProductManagerApp:
         self.background_image = ImageTk.PhotoImage(Image.open("background.jpg").resize((1000, 600)))
         self.build_login()
 
+    def choose_avatar(self):
+        file_path = filedialog.askopenfilename(filetypes=[("Image Files", "*.png *.jpg *.jpeg *.gif")])
+        if file_path:
+            try:
+                img = Image.open(file_path)
+                img = img.resize((50, 50))
+                img.save("avatar.png")
+                self.build_main_interface()
+                if self.account_popup:
+                    self.account_popup.destroy()
+            except Exception as e:
+                messagebox.showerror("Lỗi", f"Không thể đặt ảnh avatar: {e}")
+
     def toggle_account_info(self):
         if self.account_popup and self.account_popup.winfo_exists():
             self.account_popup.destroy()
@@ -94,9 +114,12 @@ class ProductManagerApp:
             self.account_popup.overrideredirect(True)
             x = self.avatar_button.winfo_rootx()
             y = self.avatar_button.winfo_rooty() + self.avatar_button.winfo_height()
-            self.account_popup.geometry(f"200x100+{x}+{y}")
-            tk.Label(self.account_popup, text=f"👤 {self.current_user['name']}\nVai trò: {self.current_user['role']}", anchor="w").pack(fill='x', padx=10, pady=5)
-            tk.Button(self.account_popup, text="Đăng xuất", command=self.logout).pack(pady=5)
+            self.account_popup.geometry(f"200x130+{x}+{y}")
+            ctk.CTkLabel(self.account_popup, text=f"👤 {self.current_user['name']}\nVai trò: {self.current_user['role']}", font=('Arial', 12, 'bold'), 
+                        anchor="center").pack(fill='x', padx=10, pady=5)
+            ctk.CTkButton(self.account_popup, text="Chọn ảnh", corner_radius=32, font=('Arial', 10, 'bold'), command=self.choose_avatar).pack(pady=2)
+            ctk.CTkButton(self.account_popup, text="Đăng xuất", corner_radius=32, font=('Arial', 10, 'bold'), command=self.logout).pack(pady=2)
+
 
     def handle_click_outside(self, event):
         if self.account_popup and self.account_popup.winfo_exists():
@@ -132,9 +155,10 @@ class ProductManagerApp:
 
         button_frame = tk.Frame(frame, bg='white')
         button_frame.grid(row=3, columnspan=2, pady=10)
-
-        tk.Button(button_frame, text="Đăng nhập", width=15, command=self.login).pack(side='left', padx=10)
-        tk.Button(button_frame, text="Đăng ký", width=15, command=self.build_register).pack(side='right', padx=10)
+        ctk.CTkButton(master=button_frame, text="Đăng nhập", width=15, corner_radius=32, font=("Arial", 12, "bold"), 
+                    command=self.login).pack(side='left', padx=10)
+        ctk.CTkButton(master=button_frame, text="Đăng ký", width=15, corner_radius=32, font=("Arial", 12, "bold"), 
+                    command=self.build_register).pack(side='right', padx=10)
 
     def build_register(self):
         self.clear_window()
@@ -165,8 +189,8 @@ class ProductManagerApp:
         button_frame = tk.Frame(frame, bg='white')
         button_frame.grid(row=5, columnspan=2, pady=10)
 
-        tk.Button(button_frame, text="Xác nhận", width=15, command=self.register_user).pack(side='left', padx=10)
-        tk.Button(button_frame, text="Quay lại", width=15, command=self.build_login).pack(side='right', padx=10)
+        ctk.CTkButton(button_frame, text="Xác nhận", width=15, corner_radius=32, font=("Arial", 12, "bold"), command=self.register_user).pack(side='left', padx=10)
+        ctk.CTkButton(button_frame, text="Quay lại", width=15, corner_radius=32, font=("Arial", 12, "bold"), command=self.build_login).pack(side='right', padx=10)
 
     def register_user(self):
         name = self.name_entry.get()
@@ -207,7 +231,7 @@ class ProductManagerApp:
 
         search_entry = tk.Entry(top_bar, font=('Arial', 12))
         search_entry.pack(side='left', padx=10, pady=5)
-        tk.Button(top_bar, text="Tìm kiếm", command=lambda: self.search_product(search_entry.get())).pack(side='left')
+        tk.Button(top_bar, text="Tìm kiếm", font=("Arial", 10, "bold"), command=lambda: self.search_product(search_entry.get())).pack(side='left')
 
         avatar_frame = tk.Frame(top_bar)
         avatar_frame.pack(side='right', padx=10)
@@ -223,12 +247,13 @@ class ProductManagerApp:
         self.build_product_table()
 
         if self.current_user['role'] == 'Quản trị viên':
-            tk.Button(self.root, text="Thêm", width=10, command=self.add_product_popup).pack(side='left', padx=10)
-            tk.Button(self.root, text="Sửa", width=10, command=self.edit_product).pack(side='left', padx=10)
-            tk.Button(self.root, text="Xóa", width=10, bg="red", fg="white", command=self.delete_product).pack(side='left', padx=10)
+            font_settings = ("Arial", 12, "bold")
+            ctk.CTkButton(self.root, text="Thêm", width=10, corner_radius=32, font=font_settings, command=self.add_product_popup).pack(side='left', padx=10)
+            ctk.CTkButton(self.root, text="Sửa", width=10, corner_radius=32, font=font_settings, command=self.edit_product).pack(side='left', padx=10)
+            ctk.CTkButton(self.root, text="Xóa", width=10, corner_radius=32, font=font_settings, fg_color="#ff0000", hover_color="#CD0202", command=self.delete_product).pack(side='left', padx=10)
             api_button_frame = tk.Frame(self.root)
             api_button_frame.pack(pady=5)
-            tk.Button(api_button_frame, text="Tạo dữ liệu từ API", width=20, command=self.fetch_api_and_reload).pack()
+            ctk.CTkButton(api_button_frame, text="Tạo dữ liệu từ API", width=20, corner_radius=32, font=font_settings, command=self.fetch_api_and_reload).pack()
         else:
             tk.Button(self.root, text="Thêm", width=10, command=self.add_product_popup).pack(side='left', padx=10)
 
@@ -253,8 +278,8 @@ class ProductManagerApp:
         }
         column_widths = {
             "id": 50,
-            "name": 450,
-            "price": 100,
+            "name": 500,
+            "price": 50,
             "qty": 50
         }
         for col in columns:
