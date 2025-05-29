@@ -1,122 +1,302 @@
 [
     {
-        "id": "1",
-        "name": "Fjallraven - Foldsack No. 1 Backpack, Fits 15 Laptops",
-        "price": "109.95",
-        "qty": "10"
+        "id": "WL030",
+        "name": "Asus - Watch Model 239",
+        "price": 473.18,
+        "qty": 60
     },
     {
-        "id": "2",
-        "name": "Mens Casual Premium Slim Fit T-Shirts ",
-        "price": "22.3",
-        "qty": "10"
+        "id": "EA914",
+        "name": "Apple - Sneakers Model 220",
+        "price": 382.68,
+        "qty": 37
     },
     {
-        "id": "3",
-        "name": "Mens Cotton Jacket",
-        "price": "55.99",
-        "qty": "10"
+        "id": "YI450",
+        "name": "Nike - Sunglasses Model 103",
+        "price": 429.14,
+        "qty": 23
     },
     {
-        "id": "4",
-        "name": "Mens Casual Slim Fit",
-        "price": "15.99",
-        "qty": "10"
+        "id": "XP843",
+        "name": "Fjallraven - Laptop Model 897",
+        "price": 292.27,
+        "qty": 80
     },
     {
-        "id": "5",
-        "name": "John Hardy Women's Legends Naga Gold & Silver Dragon Station Chain Bracelet",
-        "price": "695",
-        "qty": "10"
+        "id": "OO887",
+        "name": "Nike - Headphones Model 576",
+        "price": 404.2,
+        "qty": 8
     },
     {
-        "id": "6",
-        "name": "Solid Gold Petite Micropave ",
-        "price": "168",
-        "qty": "10"
+        "id": "LH779",
+        "name": "Nike - Tablet Model 633",
+        "price": 36.43,
+        "qty": 37
     },
     {
-        "id": "7",
-        "name": "White Gold Plated Princess",
-        "price": "9.99",
-        "qty": "10"
+        "id": "XC112",
+        "name": "Apple - Tablet Model 354",
+        "price": 182.67,
+        "qty": 99
     },
     {
-        "id": "8",
-        "name": "Pierced Owl Rose Gold Plated Stainless Steel Double",
-        "price": "10.99",
-        "qty": "10"
+        "id": "OI281",
+        "name": "Asus - Laptop Model 526",
+        "price": 53.79,
+        "qty": 66
     },
     {
-        "id": "9",
-        "name": "WD 2TB Elements Portable External Hard Drive - USB 3.0 ",
-        "price": "64",
-        "qty": "10"
+        "id": "PB175",
+        "name": "Apple - Backpack Model 661",
+        "price": 194.07,
+        "qty": 28
     },
     {
-        "id": "10",
-        "name": "SanDisk SSD PLUS 1TB Internal SSD - SATA III 6 Gb/s",
-        "price": "109",
-        "qty": "10"
+        "id": "TQ579",
+        "name": "Asus - Sneakers Model 565",
+        "price": 356.15,
+        "qty": 51
     },
     {
-        "id": "11",
-        "name": "Silicon Power 256GB SSD 3D NAND A55 SLC Cache Performance Boost SATA III 2.5",
-        "price": "109",
-        "qty": "10"
+        "id": "FC931",
+        "name": "Nike - Sneakers Model 465",
+        "price": 433.02,
+        "qty": 20
     },
     {
-        "id": "12",
-        "name": "WD 4TB Gaming Drive Works with Playstation 4 Portable External Hard Drive",
-        "price": "114",
-        "qty": "10"
+        "id": "GT702",
+        "name": "Ray-Ban - Camera Model 177",
+        "price": 378.67,
+        "qty": 71
     },
     {
-        "id": "13",
-        "name": "Acer SB220Q bi 21.5 inches Full HD (1920 x 1080) IPS Ultra-Thin",
-        "price": "599",
-        "qty": "10"
+        "id": "QW501",
+        "name": "Fjallraven - Laptop Model 730",
+        "price": 220.37,
+        "qty": 75
     },
     {
-        "id": "14",
-        "name": "Samsung 49-Inch CHG90 144Hz Curved Gaming Monitor (LC49HG90DMNXZA) – Super Ultrawide Screen QLED ",
-        "price": "999.99",
-        "qty": "10"
+        "id": "XY604",
+        "name": "Canon - Camera Model 504",
+        "price": 223.08,
+        "qty": 79
     },
     {
-        "id": "15",
-        "name": "BIYLACLESEN Women's 3-in-1 Snowboard Jacket Winter Coats",
-        "price": "56.99",
-        "qty": "10"
+        "id": "OA374",
+        "name": "Ray-Ban - Smartphone Model 509",
+        "price": 411.05,
+        "qty": 76
     },
     {
-        "id": "16",
-        "name": "Lock and Love Women's Removable Hooded Faux Leather Moto Biker Jacket",
-        "price": "29.95",
-        "qty": "10"
+        "id": "SQ383",
+        "name": "Nike - Sunglasses Model 566",
+        "price": 306.74,
+        "qty": 82
     },
     {
-        "id": "17",
-        "name": "Rain Jacket Women Windbreaker Striped Climbing Raincoats",
-        "price": "39.99",
-        "qty": "10"
+        "id": "LR606",
+        "name": "Ray-Ban - Backpack Model 661",
+        "price": 480.47,
+        "qty": 21
     },
     {
-        "id": "18",
-        "name": "MBJ Women's Solid Short Sleeve Boat Neck V ",
-        "price": "9.85",
-        "qty": "10"
+        "id": "IR396",
+        "name": "Ray-Ban - Laptop Model 643",
+        "price": 92.52,
+        "qty": 56
     },
     {
-        "id": "19",
-        "name": "Opna Women's Short Sleeve Moisture",
-        "price": "7.95",
-        "qty": "10"
+        "id": "EY085",
+        "name": "Casio - Camera Model 205",
+        "price": 286.45,
+        "qty": 94
     },
     {
-        "id": "20",
-        "name": "DANVOUY Womens T Shirt Casual Cotton Short",
-        "price": "12.99",
-        "qty": "10"
+        "id": "XA850",
+        "name": "Nike - Watch Model 444",
+        "price": 324.87,
+        "qty": 74
+    },
+    {
+        "id": "AX186",
+        "name": "Casio - Smartphone Model 431",
+        "price": 252.51,
+        "qty": 4
+    },
+    {
+        "id": "JZ715",
+        "name": "Samsung - Watch Model 905",
+        "price": 106.6,
+        "qty": 76
+    },
+    {
+        "id": "TI019",
+        "name": "Nike - Tablet Model 739",
+        "price": 322.9,
+        "qty": 71
+    },
+    {
+        "id": "OR963",
+        "name": "Ray-Ban - Smartphone Model 731",
+        "price": 239.72,
+        "qty": 60
+    },
+    {
+        "id": "MT349",
+        "name": "Samsung - Camera Model 839",
+        "price": 375.14,
+        "qty": 65
+    },
+    {
+        "id": "HZ562",
+        "name": "Sony - Headphones Model 394",
+        "price": 143.93,
+        "qty": 18
+    },
+    {
+        "id": "VT175",
+        "name": "Samsung - T-shirt Model 799",
+        "price": 253.79,
+        "qty": 58
+    },
+    {
+        "id": "ET116",
+        "name": "Apple - Sneakers Model 525",
+        "price": 497.19,
+        "qty": 85
+    },
+    {
+        "id": "NB737",
+        "name": "Casio - Laptop Model 853",
+        "price": 235.59,
+        "qty": 79
+    },
+    {
+        "id": "UL850",
+        "name": "Asus - Camera Model 985",
+        "price": 413.22,
+        "qty": 93
+    },
+    {
+        "id": "PO168",
+        "name": "Canon - Camera Model 443",
+        "price": 407.87,
+        "qty": 31
+    },
+    {
+        "id": "VE735",
+        "name": "Sony - Watch Model 662",
+        "price": 433.8,
+        "qty": 76
+    },
+    {
+        "id": "AH740",
+        "name": "Ray-Ban - T-shirt Model 976",
+        "price": 191.62,
+        "qty": 60
+    },
+    {
+        "id": "EO398",
+        "name": "Samsung - Camera Model 228",
+        "price": 33.47,
+        "qty": 39
+    },
+    {
+        "id": "GB105",
+        "name": "Ray-Ban - Sneakers Model 456",
+        "price": 450.19,
+        "qty": 99
+    },
+    {
+        "id": "IO697",
+        "name": "Fjallraven - Tablet Model 258",
+        "price": 226.26,
+        "qty": 77
+    },
+    {
+        "id": "XN204",
+        "name": "Sony - Watch Model 871",
+        "price": 276.49,
+        "qty": 87
+    },
+    {
+        "id": "WC619",
+        "name": "Sony - Laptop Model 775",
+        "price": 377.32,
+        "qty": 58
+    },
+    {
+        "id": "ZA561",
+        "name": "Fjallraven - Headphones Model 441",
+        "price": 186.65,
+        "qty": 63
+    },
+    {
+        "id": "PD009",
+        "name": "Fjallraven - Watch Model 983",
+        "price": 245.94,
+        "qty": 79
+    },
+    {
+        "id": "BR055",
+        "name": "Sony - Camera Model 409",
+        "price": 444.01,
+        "qty": 19
+    },
+    {
+        "id": "NL184",
+        "name": "Sony - Headphones Model 161",
+        "price": 56.52,
+        "qty": 59
+    },
+    {
+        "id": "OZ298",
+        "name": "Casio - Laptop Model 510",
+        "price": 129.76,
+        "qty": 95
+    },
+    {
+        "id": "MN842",
+        "name": "Casio - T-shirt Model 824",
+        "price": 338.42,
+        "qty": 51
+    },
+    {
+        "id": "OO093",
+        "name": "Asus - Watch Model 919",
+        "price": 145.47,
+        "qty": 68
+    },
+    {
+        "id": "NU436",
+        "name": "Fjallraven - Headphones Model 896",
+        "price": 399.41,
+        "qty": 59
+    },
+    {
+        "id": "YB291",
+        "name": "Fjallraven - Smartphone Model 626",
+        "price": 161.21,
+        "qty": 98
+    },
+    {
+        "id": "FR806",
+        "name": "Adidas - Tablet Model 593",
+        "price": 447.03,
+        "qty": 87
+    },
+    {
+        "id": "OV922",
+        "name": "Ray-Ban - Laptop Model 195",
+        "price": 419.16,
+        "qty": 27
+    },
+    {
+        "id": "SN959",
+        "name": "Ray-Ban - T-shirt Model 437",
+        "price": 485.32,
+        "qty": 59
     }
 ]

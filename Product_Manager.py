@@ -32,15 +32,15 @@ if not os.path.exists(USERS_FILE):
     default_users = [
         {
             "username": "admin",
-            "password": "admin123",
+            "password": hash_password("admin123"),
             "name": "Quản trị viên",
-            "role": "admin"
+            "role": "Quản trị viên"
         },
         {
             "username": "user1",
-            "password": "user123",
-            "name": "Người dùng mẫu",
-            "role": "user"
+            "password": hash_password("user123"),
+            "name": "Người dùng",
+            "role": "Người dùng"
         }
     ]
     with open(USERS_FILE, 'w', encoding='utf-8') as f:
@@ -193,6 +193,9 @@ class ProductManagerApp:
         username = self.reg_username_entry.get()
         password = hash_password(self.reg_password_entry.get())
         confirm = hash_password(self.reg_confirm_entry.get())
+        if not name or not username or not password or not confirm:
+            messagebox.showerror("Lỗi", "Vui lòng nhập đầy đủ thông tin !")
+            return
 
         if password != confirm:
             messagebox.showerror("Lỗi", "Mật khẩu không khớp")
@@ -200,7 +203,7 @@ class ProductManagerApp:
 
         users = JSONHandler.read(USERS_FILE)
         if any(user['username'] == username for user in users):
-            messagebox.showerror("Lỗi", "Tên đăng nhập đã tồn tại")
+            messagebox.showerror("Lỗi", "Tên đăng nhập đã tồn tại !")
             return
 
         users.append({'username': username, 'password': password, 'name': name, 'role': 'Người dùng'})
@@ -211,6 +214,9 @@ class ProductManagerApp:
     def login(self):
         username = self.username_entry.get()
         password = hash_password(self.password_entry.get())
+        if not username or not password:
+            messagebox.showerror("Lỗi", "Vui lòng nhập đầy đủ thông tin !")
+            return
         users = JSONHandler.read(USERS_FILE)
         user = next((u for u in users if u['username'] == username and u['password'] == password), None)
         if user:
@@ -321,22 +327,46 @@ class ProductManagerApp:
         qty_entry.grid(row=3, column=1)
 
         def add():
-            products = JSONHandler.read(DATA_FILE)
-            if any(p['name'] == name_entry.get() for p in products):
-                messagebox.showwarning("Trùng tên", "Đã có sản phẩm này")
+            id_val = id_entry.get().strip()
+            name_val = name_entry.get().strip()
+            price_val = price_entry.get().strip()
+            qty_val = qty_entry.get().strip()
+
+            if not id_val or not name_val or not price_val or not qty_val:
+                messagebox.showerror("Lỗi", "Vui lòng nhập đầy đủ thông tin sản phẩm!")
                 return
+
+            # Kiểm tra trùng mã hoặc tên
+            products = JSONHandler.read(DATA_FILE)
+            if any(p['id'] == id_val for p in products):
+                messagebox.showerror("Trùng mã", "Mã sản phẩm đã tồn tại!")
+                return
+            if any(p['name'].lower() == name_val.lower() for p in products):
+                messagebox.showwarning("Trùng tên", "Đã có sản phẩm với tên này!")
+                return
+
+            # Kiểm tra kiểu dữ liệu
+            try:
+                price_float = float(price_val)
+                qty_int = int(qty_val)
+                if price_float <= 0 or qty_int < 0:
+                    raise ValueError
+            except ValueError:
+                messagebox.showerror("Lỗi", "Giá phải là số thực dương và số lượng là số nguyên không âm!")
+                return
+
             new_product = {
-                "id": id_entry.get(),
-                "name": name_entry.get(),
-                "price": price_entry.get(),
-                "qty": qty_entry.get()
+                "id": id_val,
+                "name": name_val,
+                "price": str(price_float),
+                "qty": str(qty_int)
             }
             products.append(new_product)
             JSONHandler.write(DATA_FILE, products)
             self.load_products_to_tree()
             popup.destroy()
 
-        tk.Button(popup, text="Thêm", command=add).grid(row=4, columnspan=2, pady=5)
+        ctk.CTkButton(popup, text="Thêm", corner_radius=32, command=add).grid(row=4, columnspan=2, pady=5)
 
     def edit_product(self):
         selected = self.products_tree.selection()
@@ -379,7 +409,7 @@ class ProductManagerApp:
             self.load_products_to_tree()
             popup.destroy()
 
-        tk.Button(popup, text="Lưu", command=save_edit).grid(row=4, columnspan=2)
+        ctk.CTkButton(popup, text="Lưu", corner_radius=32, command=save_edit).grid(row=4, columnspan=2)
 
     def delete_product(self):
         selected = self.products_tree.selection()
@@ -393,6 +423,7 @@ class ProductManagerApp:
             products = [p for p in products if p['id'] != values[0]]
             JSONHandler.write(DATA_FILE, products)
             self.load_products_to_tree()
+            messagebox.showinfo("Thông báo", "Xóa sản phẩm thành công !")
 
     def search_product(self, keyword):
         keyword = keyword.lower()
