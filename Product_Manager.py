@@ -2,8 +2,8 @@ import tkinter as tk
 import customtkinter as ctk
 from tkinter import messagebox, ttk, simpledialog, filedialog
 from PIL import Image, ImageTk
-import json, os
-import requests
+import json, os, io
+import requests, random, string
 import urllib3
 import hashlib
 
@@ -15,6 +15,7 @@ os.makedirs(AVATAR_FOLDER, exist_ok=True)
 # Hash mật khẩu
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
+
 
 def load_image(path, size):
     try:
@@ -65,25 +66,44 @@ class JSONHandler:
 
 class ProductFetcher:
     @staticmethod
+    def generate_random_id(existing_ids):
+        while True:
+            letters = ''.join(random.choices(string.ascii_uppercase, k=2))
+            digits = ''.join(random.choices(string.digits, k=3))
+            new_id = letters + digits
+            if new_id not in existing_ids:
+                return new_id
+
+    @staticmethod
     def fetch_from_api():
         try:
             response = requests.get("https://fakestoreapi.com/products", verify=False)
             if response.status_code == 200:
-                products = response.json()
-                simplified = [
-                    {
-                        "id": str(p['id']),
+                api_products = response.json()
+                existing_products = JSONHandler.read(DATA_FILE)
+                existing_ids = {p['id'] for p in existing_products}
+
+                for p in api_products:
+                    new_id = ProductFetcher.generate_random_id(existing_ids)
+                    existing_ids.add(new_id)
+
+                    new_product = {
+                        "id": new_id,
                         "name": p['title'],
                         "price": str(p['price']),
-                        "qty": "10"
+                        "qty": str(random.randint(1, 999)),
+                        "description": p.get('description', ''),
+                        "image": p.get('image', ''),
+                        "rate": str(p.get('rating', {}).get('rate', '')),
+                        "count": str(p.get('rating', {}).get('count', ''))
                     }
-                    for p in products
-                ]
-                JSONHandler.write(DATA_FILE, simplified)
+                    existing_products.append(new_product)
+
+                JSONHandler.write(DATA_FILE, existing_products)
                 return True
             return False
         except Exception as e:
-            print("Error fetching data:", e)
+            print("Error fetching from API:", e)
             return False
 
 class ProductManagerApp:
@@ -258,14 +278,14 @@ class ProductManagerApp:
             api_button_frame = tk.Frame(self.root)
             api_button_frame.pack(pady=5)
             ctk.CTkButton(api_button_frame, text="Tạo dữ liệu từ API", width=20, corner_radius=32, font=font_settings, 
-                        command=self.fetch_api_and_reload).pack()
+                        command=self.fetch_api_and_reload).pack(side='left', padx=100)
+            ctk.CTkButton(api_button_frame, text="Xem chi tiết", width=10, corner_radius=32, font=font_settings,
+                        command=self.view_product_info).pack(side='right')
         else:
-            ctk.CTkButton(self.root, text="Thêm", width=10, corner_radius=32, font=font_settings, 
-                        command=self.add_product_popup).pack(side='left', padx=100)
-            api_button_frame = tk.Frame(self.root)
-            api_button_frame.pack(pady=5)
-            ctk.CTkButton(api_button_frame, text="Tạo dữ liệu từ API", width=20, corner_radius=32, font=font_settings, 
-                        command=self.fetch_api_and_reload).pack()
+            bottom_button = tk.Frame(self.root)
+            bottom_button.pack(side='bottom', anchor="e", fill='x', pady=5, padx=10)
+            ctk.CTkButton(bottom_button, text="Xem Thông Tin Sản Phẩm", width=10, corner_radius=32, font=font_settings,
+                        command=self.view_product_info).pack(side='right')
             
     def show_user_menu(self, event):
         self.user_menu.lift()
@@ -284,7 +304,7 @@ class ProductManagerApp:
             "id": "Mã sản phẩm",
             "name": "Tên sản phẩm",
             "price": "Giá",
-            "qty": "Số lượng"
+            "qty": "Số lượng tồn kho"
         }
         column_widths = {
             "id": 50,
@@ -309,107 +329,220 @@ class ProductManagerApp:
             price_str = f"{p['price']} USD"
             self.products_tree.insert('', 'end', values=(p['id'], p['name'], price_str, p['qty']))
 
+    def view_product_info(self):
+        selected = self.products_tree.focus()
+        if not selected:
+            messagebox.showwarning("Chú ý", "Vui lòng chọn một sản phẩm để xem thông tin.")
+            return
+
+        item = self.products_tree.item(selected)
+        product_id = item['values'][0]
+
+        products = JSONHandler.read(DATA_FILE)
+        product = next((p for p in products if p['id'] == product_id), None)
+        if not product:
+            messagebox.showerror("Lỗi", "Không tìm thấy sản phẩm.")
+            return
+
+        # Tạo cửa sổ xem/chỉnh sửa thông tin
+        info_win = tk.Toplevel(self.root)
+        info_win.title(f"Thông tin sản phẩm {product['id']}")
+        info_win.geometry("600x500")
+
+        # Các trường thông tin:
+        fields = [
+            ("Mã sản phẩm", "id"),
+            ("Tên sản phẩm", "name"),
+            ("Giá", "price"),
+            ("Số lượng tồn kho", "qty"),
+            ("Số lượng mua", "count"),
+            ("Đánh giá", "rate"),
+            ("Mô tả", "description"),
+            ("Hình ảnh", "image"),
+        ]
+
+        entries = {}
+        row = 0
+        for label_text, key in fields:
+            tk.Label(info_win, text=label_text).grid(row=row, column=0, sticky=tk.W, padx=5, pady=2)
+            if key == 'image':
+                # Hiển thị hình ảnh (nếu có)
+                img_url = product.get('image', '')
+                if img_url:
+                    try:
+                        response = requests.get(img_url)
+                        img_data = response.content
+                        pil_img = Image.open(io.BytesIO(img_data))
+                        pil_img.thumbnail((200, 200))
+                        img = ImageTk.PhotoImage(pil_img)
+                        img_label = tk.Label(info_win, image=img)
+                        img_label.image = img  # Giữ tham chiếu
+                        img_label.grid(row=row, column=1, padx=5, pady=5)
+                    except Exception as e:
+                        tk.Label(info_win, text="Không tải được hình ảnh").grid(row=row, column=1, padx=5, pady=5)
+                else:
+                    tk.Label(info_win, text="Không có hình ảnh").grid(row=row, column=1, padx=5, pady=5)
+            elif key == "description":
+                txt = tk.Text(info_win, width=50, height=5)
+                txt.insert('1.0', product.get(key, ''))
+                txt.grid(row=row, column=1, padx=5, pady=5)
+                txt.config(state='normal' if self.current_user['role'] == 'Quản trị viên' else 'disabled')
+                entries[key] = txt
+            else:
+                ent = tk.Entry(info_win, width=50)
+                ent.insert(0, product.get(key, ''))
+                ent.grid(row=row, column=1, padx=5, pady=5)
+                if key in ['id']:  # Không cho sửa mã sản phẩm
+                    ent.config(state='disabled')
+                else:
+                    ent.config(state='normal' if self.current_user['role'] == 'Quản trị viên' else 'disabled')
+                entries[key] = ent
+            row += 1
+
+
     def add_product_popup(self):
         popup = tk.Toplevel(self.root)
-        popup.title("Thêm sản phẩm")
-        tk.Label(popup, text="Mã sản phẩm").grid(row=0, column=0)
-        tk.Label(popup, text="Tên sản phẩm").grid(row=1, column=0)
-        tk.Label(popup, text="Giá").grid(row=2, column=0)
-        tk.Label(popup, text="Số lượng").grid(row=3, column=0)
+        popup.title("Thêm sản phẩm mới")
+        popup.geometry("500x300")
 
-        id_entry = tk.Entry(popup)
-        name_entry = tk.Entry(popup)
-        price_entry = tk.Entry(popup)
-        qty_entry = tk.Entry(popup)
-        id_entry.grid(row=0, column=1)
-        name_entry.grid(row=1, column=1)
-        price_entry.grid(row=2, column=1)
-        qty_entry.grid(row=3, column=1)
+        labels = ["Mã sản phẩm", "Tên sản phẩm", "Giá", "Số lượng tồn", "Mô tả", "Hình ảnh (URL hoặc path)", "Đánh giá (số)", "Số lượng mua"]
+        entries = {}
 
-        def add():
-            id_val = id_entry.get().strip()
-            name_val = name_entry.get().strip()
-            price_val = price_entry.get().strip()
-            qty_val = qty_entry.get().strip()
+        for i, label_text in enumerate(labels):
+            tk.Label(popup, text=label_text).grid(row=i, column=0, sticky='w')
+            entry = tk.Entry(popup, width=50)
+            entry.grid(row=i, column=1, sticky='ew', pady=5)
+            entries[label_text] = entry
 
-            if not id_val or not name_val or not price_val or not qty_val:
-                messagebox.showerror("Lỗi", "Vui lòng nhập đầy đủ thông tin sản phẩm!")
-                return
-
-            # Kiểm tra trùng mã hoặc tên
-            products = JSONHandler.read(DATA_FILE)
-            if any(p['id'] == id_val for p in products):
-                messagebox.showerror("Trùng mã", "Mã sản phẩm đã tồn tại!")
-                return
-            if any(p['name'].lower() == name_val.lower() for p in products):
-                messagebox.showwarning("Trùng tên", "Đã có sản phẩm với tên này!")
-                return
-
-            # Kiểm tra kiểu dữ liệu
-            try:
-                price_float = float(price_val)
-                qty_int = int(qty_val)
-                if price_float <= 0 or qty_int < 0:
-                    raise ValueError
-            except ValueError:
-                messagebox.showerror("Lỗi", "Giá phải là số thực dương và số lượng là số nguyên không âm!")
-                return
-
+        def save_new_product():
+            # Lấy dữ liệu nhập
             new_product = {
-                "id": id_val,
-                "name": name_val,
-                "price": str(price_float),
-                "qty": str(qty_int)
+                'id': entries["Mã sản phẩm"].get().strip(),
+                'name': entries["Tên sản phẩm"].get().strip(),
+                'price': entries["Giá"].get().strip(),
+                'qty': entries["Số lượng tồn"].get().strip(),
+                'description': entries["Mô tả"].get().strip(),
+                'image': entries["Hình ảnh (URL hoặc path)"].get().strip(),
+                'rating': entries["Đánh giá (số)"].get().strip(),
+                'count': entries["Số lượng mua"].get().strip()
             }
+
+            # Có thể thêm kiểm tra dữ liệu hợp lệ (ví dụ: price, qty, rating, count phải là số)
+            try:
+                new_product['price'] = float(new_product['price'])
+                new_product['qty'] = int(new_product['qty'])
+                new_product['rating'] = float(new_product['rating'])
+                new_product['count'] = int(new_product['count'])
+            except ValueError:
+                messagebox.showerror("Lỗi dữ liệu", "Giá, số lượng tồn, đánh giá và số lượng mua phải là số hợp lệ.")
+                return
+
+            if not new_product['id'] or not new_product['name']:
+                messagebox.showerror("Lỗi dữ liệu", "Mã sản phẩm và Tên sản phẩm không được để trống.")
+                return
+
+            # Đọc dữ liệu hiện có, kiểm tra trùng ID
+            products = JSONHandler.read(DATA_FILE)
+            for p in products:
+                if p['id'] == new_product['id']:
+                    messagebox.showerror("Lỗi", "Mã sản phẩm đã tồn tại.")
+                    return
+
+            # Thêm sản phẩm mới
             products.append(new_product)
             JSONHandler.write(DATA_FILE, products)
             self.load_products_to_tree()
             popup.destroy()
 
-        ctk.CTkButton(popup, text="Thêm", corner_radius=32, command=add).grid(row=4, columnspan=2, pady=5)
+        ctk.CTkButton(popup, text="Lưu", command=save_new_product, corner_radius=32).grid(row=len(labels), column=0, columnspan=2, pady=10)
+
 
     def edit_product(self):
         selected = self.products_tree.selection()
         if not selected:
             messagebox.showwarning("Chọn sản phẩm", "Vui lòng chọn sản phẩm để sửa")
             return
+
         values = self.products_tree.item(selected[0], 'values')
+        product_id = values[0]
+
+        # Tìm sản phẩm đầy đủ trong file JSON
+        products = JSONHandler.read(DATA_FILE)
+        for product in products:
+            if product['id'] == product_id:
+                current_product = product
+                break
+        else:
+            messagebox.showerror("Lỗi", "Không tìm thấy sản phẩm trong dữ liệu.")
+            return
+
         popup = tk.Toplevel(self.root)
         popup.title("Sửa sản phẩm")
-        tk.Label(popup, text="Mã sản phẩm").grid(row=0, column=0)
-        tk.Label(popup, text="Tên sản phẩm").grid(row=1, column=0)
-        tk.Label(popup, text="Giá").grid(row=2, column=0)
-        tk.Label(popup, text="Số lượng").grid(row=3, column=0)
+        popup.geometry("600x400")
 
-        id_entry = tk.Entry(popup)
-        id_entry.insert(0, values[0])
-        id_entry.grid(row=0, column=1)
+        # Các label + entry
+        labels = [
+            "Mã sản phẩm", "Tên sản phẩm", "Giá", "Số lượng tồn kho",
+            "Mô tả", "Link ảnh", "Đánh giá", "Số lượng mua"
+        ]
 
-        name_entry = tk.Entry(popup)
-        name_entry.insert(0, values[1])
-        name_entry.grid(row=1, column=1)
+        entries = {}
 
-        price_entry = tk.Entry(popup)
-        price_entry.insert(0, values[2])
-        price_entry.grid(row=2, column=1)
+        for i, label in enumerate(labels):
+            ctk.CTkLabel(popup, text=label + ":").grid(row=i, column=0, padx=10, pady=8, sticky='e')
+            entry = ctk.CTkEntry(popup, width=300)
+            key = ['id', 'title', 'price', 'qty', 'description', 'image', 'rate', 'count'][i]
+            value = current_product.get(key, '')
+            if isinstance(value, (int, float)):
+                value = str(value)
+            entry.insert(0, value)
+            if key == 'id':
+                entry.configure(state='disabled')  # Không sửa ID
+            entry.grid(row=i, column=1, padx=10, pady=8)
+            entries[key] = entry
 
-        qty_entry = tk.Entry(popup)
-        qty_entry.insert(0, values[3])
-        qty_entry.grid(row=3, column=1)
+        # Nút chọn ảnh
+        def select_image():
+            file_path = filedialog.askopenfilename(filetypes=[("Image files", "*.png *.jpg *.jpeg *.gif")])
+            if file_path:
+                entries['image'].delete(0, tk.END)
+                entries['image'].insert(0, file_path)
 
+        ctk.CTkButton(popup, text="Chọn ảnh", command=select_image).grid(row=5, column=2, padx=5)
+
+        # Hàm lưu thay đổi
         def save_edit():
-            products = JSONHandler.read(DATA_FILE)
-            for product in products:
-                if product['id'] == values[0]:
-                    product['name'] = name_entry.get()
-                    product['price'] = price_entry.get()
-                    product['qty'] = qty_entry.get()
-                    break
-            JSONHandler.write(DATA_FILE, products)
-            self.load_products_to_tree()
-            popup.destroy()
+            try:
+                # Lấy và ép kiểu các trường
+                title = entries['title'].get()
+                price = float(entries['price'].get())
+                qty = int(entries['qty'].get())
+                description = entries['description'].get()
+                image = entries['image'].get()
+                rate = float(entries['rate'].get())
+                count = int(entries['count'].get())
 
-        ctk.CTkButton(popup, text="Lưu", corner_radius=32, command=save_edit).grid(row=4, columnspan=2)
+                for product in products:
+                    if product['id'] == product_id:
+                        product['title'] = title
+                        product['price'] = price
+                        product['qty'] = qty
+                        product['description'] = description
+                        product['image'] = image
+                        product['rate'] = rate
+                        product['count'] = count
+                        break
+
+                JSONHandler.write(DATA_FILE, products)
+                self.load_products_to_tree()
+                messagebox.showinfo("Thành công", "Đã cập nhật sản phẩm.")
+                popup.destroy()
+
+            except ValueError:
+                messagebox.showerror("Lỗi", "Vui lòng nhập đúng định dạng cho giá, số lượng, đánh giá và số lượng mua.")
+
+        # Nút lưu
+        ctk.CTkButton(popup, text="Lưu", command=save_edit, corner_radius=32).grid(row=8, columnspan=3, pady=20)
 
     def delete_product(self):
         selected = self.products_tree.selection()
