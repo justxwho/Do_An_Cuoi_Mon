@@ -496,7 +496,7 @@ class ProductManagerApp:
         values = self.products_tree.item(selected[0], 'values')
         product_id = values[0]
 
-        # Tìm sản phẩm đầy đủ trong file JSON
+        # Tìm sản phẩm trong JSON
         products = JSONHandler.read(DATA_FILE)
         for product in products:
             if product['id'] == product_id:
@@ -510,25 +510,25 @@ class ProductManagerApp:
         popup.title("Sửa sản phẩm")
         popup.geometry("600x400")
 
-        # Các label + entry
         labels = [
             "Mã sản phẩm", "Tên sản phẩm", "Giá", "Số lượng tồn kho",
             "Mô tả", "Link ảnh", "Đánh giá", "Số lượng mua"
         ]
 
+        keys = ['id', 'title', 'price', 'qty', 'description', 'image', 'rate', 'count']
         entries = {}
 
         for i, label in enumerate(labels):
-            ctk.CTkLabel(popup, text=label + ":").grid(row=i, column=0, padx=10, pady=8, sticky='e')
-            entry = ctk.CTkEntry(popup, width=300)
-            key = ['id', 'title', 'price', 'qty', 'description', 'image', 'rate', 'count'][i]
+            tk.Label(popup, text=label + ":").grid(row=i, column=0, padx=10, pady=5, sticky='e')
+            entry = tk.Entry(popup, width=45)
+            key = keys[i]
             value = current_product.get(key, '')
             if isinstance(value, (int, float)):
                 value = str(value)
             entry.insert(0, value)
             if key == 'id':
-                entry.configure(state='disabled')  # Không sửa ID
-            entry.grid(row=i, column=1, padx=10, pady=8)
+                entry.configure(state='disabled')
+            entry.grid(row=i, column=1, padx=10, pady=5, sticky='w')
             entries[key] = entry
 
         # Nút chọn ảnh
@@ -538,12 +538,11 @@ class ProductManagerApp:
                 entries['image'].delete(0, tk.END)
                 entries['image'].insert(0, file_path)
 
-        ctk.CTkButton(popup, text="Chọn ảnh", command=select_image).grid(row=5, column=2, padx=5)
+        ctk.CTkButton(popup, text="Chọn ảnh", corner_radius=32, command=select_image).grid(row=5, column=2, padx=5)
 
-        # Hàm lưu thay đổi
+        # Hàm lưu
         def save_edit():
             try:
-                # Lấy và ép kiểu các trường
                 title = entries['title'].get()
                 price = float(entries['price'].get())
                 qty = int(entries['qty'].get())
@@ -552,32 +551,22 @@ class ProductManagerApp:
                 rate = float(entries['rate'].get())
                 count = int(entries['count'].get())
 
-                # Nếu đường dẫn ảnh mới khác ảnh cũ và là file local (không phải url web), copy vào thư mục image_products
                 old_image_path = current_product.get('image', '')
                 if image_input_path != old_image_path:
                     if not (image_input_path.startswith('http://') or image_input_path.startswith('https://')):
-                        # Đảm bảo thư mục tồn tại
+                        ext = os.path.splitext(image_input_path)[1]
+                        safe_name = title.replace(' ', '_')
                         dest_dir = 'image_products'
                         os.makedirs(dest_dir, exist_ok=True)
-
-                        # Đặt tên file ảnh mới theo quy tắc image-[tên sản phẩm].ext
-                        ext = os.path.splitext(image_input_path)[1]
-                        # Lấy tên sản phẩm làm tên file, thay khoảng trắng bằng dấu gạch dưới
-                        safe_name = title.replace(' ', '_')
                         new_filename = f"image-{safe_name}{ext}"
                         dest_path = os.path.join(dest_dir, new_filename)
-
                         try:
                             shutil.copy(image_input_path, dest_path)
-                            image_input_path = dest_path  # cập nhật đường dẫn ảnh mới
+                            image_input_path = dest_path
                         except Exception as e:
                             messagebox.showerror("Lỗi", f"Lỗi khi sao chép ảnh: {str(e)}")
                             return
-                    else:
-                        # Nếu là url web thì giữ nguyên đường dẫn
-                        pass
 
-                # Cập nhật dữ liệu sản phẩm
                 for product in products:
                     if product['id'] == product_id:
                         product['title'] = title
@@ -597,8 +586,8 @@ class ProductManagerApp:
             except ValueError:
                 messagebox.showerror("Lỗi", "Vui lòng nhập đúng định dạng cho giá, số lượng, đánh giá và số lượng mua.")
 
-        # Nút lưu
-        ctk.CTkButton(popup, text="Lưu", command=save_edit, corner_radius=32).grid(row=8, columnspan=3, pady=20)
+        ctk.CTkButton(popup, text="Lưu", corner_radius=32, command=save_edit).grid(row=8, columnspan=3, pady=20)
+
 
     def delete_product(self):
         selected = self.products_tree.selection()
