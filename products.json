@@ -45,9 +45,10 @@
         "price": 73.77,
         "qty": 96,
         "description": "This is a high-quality Samsung - Laptop Model 965 perfect for your needs.",
-        "image": "https://example.com/images/product1.jpg",
+        "image": "https://example.com/images/product4.jpg",
         "rate": 4.27,
-        "count": 302
+        "count": 302,
+        "title": ""
     },
     {
         "id": "GA180",
@@ -78,17 +79,6 @@
         "image": "https://example.com/images/product2.jpg",
         "rate": 4.59,
         "count": 207
-    },
-    {
-        "id": "IV806",
-        "name": "Canon - Laptop Model 550",
-        "price": 302.94,
-        "qty": 57,
-        "description": "This is a high-quality Canon - Laptop Model 550 perfect for your needs.",
-        "image": "image_products\\image-.jpg",
-        "rate": 4.69,
-        "count": 287,
-        "title": ""
     },
     {
         "id": "KH932",

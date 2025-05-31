@@ -2,7 +2,7 @@ import tkinter as tk
 import customtkinter as ctk
 from tkinter import messagebox, ttk, simpledialog, filedialog
 from PIL import Image, ImageTk
-import json, os, io
+import json, os, io, shutil
 import requests, random, string
 import urllib3
 import hashlib
@@ -10,6 +10,7 @@ import hashlib
 DATA_FILE = 'products.json'
 USERS_FILE = 'users.json'
 AVATAR_FOLDER = "avatars"
+IMAGE_FOLDER = "image_products"
 os.makedirs(AVATAR_FOLDER, exist_ok=True)
 
 # Hash mật khẩu
@@ -366,20 +367,26 @@ class ProductManagerApp:
         for label_text, key in fields:
             tk.Label(info_win, text=label_text).grid(row=row, column=0, sticky=tk.W, padx=5, pady=2)
             if key == 'image':
-                # Hiển thị hình ảnh (nếu có)
-                img_url = product.get('image', '')
-                if img_url:
+                img_path = product.get('image', '')
+                if img_path:
                     try:
-                        response = requests.get(img_url)
-                        img_data = response.content
-                        pil_img = Image.open(io.BytesIO(img_data))
+                        if img_path.startswith('http://') or img_path.startswith('https://'):
+                            # Tải ảnh từ URL
+                            response = requests.get(img_path)
+                            img_data = response.content
+                            pil_img = Image.open(io.BytesIO(img_data))
+                        else:
+                            # Ảnh local: mở file trực tiếp
+                            if not os.path.isfile(img_path):
+                                raise FileNotFoundError(f"File ảnh không tồn tại: {img_path}")
+                            pil_img = Image.open(img_path)
                         pil_img.thumbnail((200, 200))
                         img = ImageTk.PhotoImage(pil_img)
                         img_label = tk.Label(info_win, image=img)
-                        img_label.image = img  # Giữ tham chiếu
+                        img_label.image = img  # Giữ tham chiếu ảnh
                         img_label.grid(row=row, column=1, padx=5, pady=5)
                     except Exception as e:
-                        tk.Label(info_win, text="Không tải được hình ảnh").grid(row=row, column=1, padx=5, pady=5)
+                        tk.Label(info_win, text=f"Không tải được hình ảnh:\n{str(e)}").grid(row=row, column=1, padx=5, pady=5)
                 else:
                     tk.Label(info_win, text="Không có hình ảnh").grid(row=row, column=1, padx=5, pady=5)
             elif key == "description":
@@ -392,7 +399,7 @@ class ProductManagerApp:
                 ent = tk.Entry(info_win, width=50)
                 ent.insert(0, product.get(key, ''))
                 ent.grid(row=row, column=1, padx=5, pady=5)
-                if key in ['id']:  # Không cho sửa mã sản phẩm
+                if key == 'id':  # Không cho sửa mã sản phẩm
                     ent.config(state='disabled')
                 else:
                     ent.config(state='normal' if self.current_user['role'] == 'Quản trị viên' else 'disabled')
@@ -403,35 +410,44 @@ class ProductManagerApp:
     def add_product_popup(self):
         popup = tk.Toplevel(self.root)
         popup.title("Thêm sản phẩm mới")
-        popup.geometry("500x300")
+        popup.geometry("500x400")
 
-        labels = ["Mã sản phẩm", "Tên sản phẩm", "Giá", "Số lượng tồn", "Mô tả", "Hình ảnh (URL hoặc path)", "Đánh giá (số)", "Số lượng mua"]
+        labels = ["Mã sản phẩm", "Tên sản phẩm", "Giá", "Số lượng tồn", "Mô tả", "Hình ảnh", "Đánh giá (số)", "Số lượng mua"]
         entries = {}
 
         for i, label_text in enumerate(labels):
-            tk.Label(popup, text=label_text).grid(row=i, column=0, sticky='w')
-            entry = tk.Entry(popup, width=50)
-            entry.grid(row=i, column=1, sticky='ew', pady=5)
+            tk.Label(popup, text=label_text).grid(row=i, column=0, sticky='w', pady=5, padx=5)
+            entry = tk.Entry(popup, width=40)
+            entry.grid(row=i, column=1, sticky='w', pady=5)
             entries[label_text] = entry
 
+            # Nếu là trường Hình ảnh thì thêm nút chọn ảnh bên cạnh
+            if label_text == "Hình ảnh":
+                def choose_image():
+                    file_path = filedialog.askopenfilename(filetypes=[("Image files", "*.jpg *.jpeg *.png *.gif")])
+                    if file_path:
+                        entries["Hình ảnh"].delete(0, tk.END)
+                        entries["Hình ảnh"].insert(0, file_path)
+
+                ctk.CTkButton(popup, text="Chọn ảnh", corner_radius=32, command=choose_image).grid(row=i, column=2, padx=10)
+
         def save_new_product():
-            # Lấy dữ liệu nhập
             new_product = {
                 'id': entries["Mã sản phẩm"].get().strip(),
                 'name': entries["Tên sản phẩm"].get().strip(),
                 'price': entries["Giá"].get().strip(),
                 'qty': entries["Số lượng tồn"].get().strip(),
                 'description': entries["Mô tả"].get().strip(),
-                'image': entries["Hình ảnh (URL hoặc path)"].get().strip(),
-                'rating': entries["Đánh giá (số)"].get().strip(),
+                'image': entries["Hình ảnh"].get().strip(),
+                'rate': entries["Đánh giá (số)"].get().strip(),
                 'count': entries["Số lượng mua"].get().strip()
             }
 
-            # Có thể thêm kiểm tra dữ liệu hợp lệ (ví dụ: price, qty, rating, count phải là số)
+            # Kiểm tra và chuyển đổi kiểu dữ liệu
             try:
                 new_product['price'] = float(new_product['price'])
                 new_product['qty'] = int(new_product['qty'])
-                new_product['rating'] = float(new_product['rating'])
+                new_product['rate'] = float(new_product['rate'])
                 new_product['count'] = int(new_product['count'])
             except ValueError:
                 messagebox.showerror("Lỗi dữ liệu", "Giá, số lượng tồn, đánh giá và số lượng mua phải là số hợp lệ.")
@@ -441,21 +457,35 @@ class ProductManagerApp:
                 messagebox.showerror("Lỗi dữ liệu", "Mã sản phẩm và Tên sản phẩm không được để trống.")
                 return
 
-            # Đọc dữ liệu hiện có, kiểm tra trùng ID
+            # Kiểm tra trùng ID
             products = JSONHandler.read(DATA_FILE)
-            for p in products:
-                if p['id'] == new_product['id']:
-                    messagebox.showerror("Lỗi", "Mã sản phẩm đã tồn tại.")
-                    return
+            if any(p['id'] == new_product['id'] for p in products):
+                messagebox.showerror("Lỗi", "Mã sản phẩm đã tồn tại.")
+                return
 
-            # Thêm sản phẩm mới
+            # Xử lý ảnh
+            image_input = new_product['image']
+            if image_input and os.path.isfile(image_input):
+                ext = os.path.splitext(image_input)[-1]
+                safe_name = new_product['name'].replace(" ", "_")
+                image_filename = f"image-{safe_name}{ext}"
+                image_dir = "image_products"
+                if not os.path.exists(image_dir):
+                    os.makedirs(image_dir)
+                image_path = os.path.join("image_products", image_filename)
+                shutil.copy(image_input, image_path)
+                new_product['image'] = image_path  # Ghi lại đường dẫn mới
+            else:
+                messagebox.showerror("Lỗi ảnh", "Vui lòng chọn một ảnh hợp lệ từ máy.")
+                return
+
             products.append(new_product)
             JSONHandler.write(DATA_FILE, products)
             self.load_products_to_tree()
+            messagebox.showinfo("Thành công", "Thêm sản phẩm thành công!")
             popup.destroy()
 
-        ctk.CTkButton(popup, text="Lưu", command=save_new_product, corner_radius=32).grid(row=len(labels), column=0, columnspan=2, pady=10)
-
+        ctk.CTkButton(popup, text="Lưu", command=save_new_product, corner_radius=32).grid(row=len(labels), column=0, columnspan=3, pady=15)
 
     def edit_product(self):
         selected = self.products_tree.selection()
@@ -518,17 +548,43 @@ class ProductManagerApp:
                 price = float(entries['price'].get())
                 qty = int(entries['qty'].get())
                 description = entries['description'].get()
-                image = entries['image'].get()
+                image_input_path = entries['image'].get()
                 rate = float(entries['rate'].get())
                 count = int(entries['count'].get())
 
+                # Nếu đường dẫn ảnh mới khác ảnh cũ và là file local (không phải url web), copy vào thư mục image_products
+                old_image_path = current_product.get('image', '')
+                if image_input_path != old_image_path:
+                    if not (image_input_path.startswith('http://') or image_input_path.startswith('https://')):
+                        # Đảm bảo thư mục tồn tại
+                        dest_dir = 'image_products'
+                        os.makedirs(dest_dir, exist_ok=True)
+
+                        # Đặt tên file ảnh mới theo quy tắc image-[tên sản phẩm].ext
+                        ext = os.path.splitext(image_input_path)[1]
+                        # Lấy tên sản phẩm làm tên file, thay khoảng trắng bằng dấu gạch dưới
+                        safe_name = title.replace(' ', '_')
+                        new_filename = f"image-{safe_name}{ext}"
+                        dest_path = os.path.join(dest_dir, new_filename)
+
+                        try:
+                            shutil.copy(image_input_path, dest_path)
+                            image_input_path = dest_path  # cập nhật đường dẫn ảnh mới
+                        except Exception as e:
+                            messagebox.showerror("Lỗi", f"Lỗi khi sao chép ảnh: {str(e)}")
+                            return
+                    else:
+                        # Nếu là url web thì giữ nguyên đường dẫn
+                        pass
+
+                # Cập nhật dữ liệu sản phẩm
                 for product in products:
                     if product['id'] == product_id:
                         product['title'] = title
                         product['price'] = price
                         product['qty'] = qty
                         product['description'] = description
-                        product['image'] = image
+                        product['image'] = image_input_path
                         product['rate'] = rate
                         product['count'] = count
                         break
@@ -552,11 +608,38 @@ class ProductManagerApp:
         confirm = messagebox.askyesno("Xác nhận", "Bạn có chắc chắn muốn xóa sản phẩm này?")
         if confirm:
             values = self.products_tree.item(selected[0], 'values')
+            product_id = values[0]
+
             products = JSONHandler.read(DATA_FILE)
-            products = [p for p in products if p['id'] != values[0]]
-            JSONHandler.write(DATA_FILE, products)
-            self.load_products_to_tree()
-            messagebox.showinfo("Thông báo", "Xóa sản phẩm thành công !")
+
+            # Tìm sản phẩm cần xóa để lấy thông tin ảnh
+            product_to_delete = None
+            for p in products:
+                if p['id'] == product_id:
+                    product_to_delete = p
+                    break
+
+            if product_to_delete:
+                # Xóa file ảnh nếu nằm trong folder image_products
+                image_path = product_to_delete.get('image', '')
+                if image_path and os.path.isfile(image_path):
+                    # Kiểm tra xem file ảnh có nằm trong thư mục image_products hay không
+                    abs_image_path = os.path.abspath(image_path)
+                    abs_image_dir = os.path.abspath('image_products')
+                    if abs_image_path.startswith(abs_image_dir):
+                        try:
+                            os.remove(image_path)
+                        except Exception as e:
+                            messagebox.showwarning("Cảnh báo", f"Không thể xóa ảnh sản phẩm: {str(e)}")
+
+                # Loại bỏ sản phẩm khỏi danh sách
+                products = [p for p in products if p['id'] != product_id]
+
+                JSONHandler.write(DATA_FILE, products)
+                self.load_products_to_tree()
+                messagebox.showinfo("Thông báo", "Xóa sản phẩm thành công!")
+            else:
+                messagebox.showerror("Lỗi", "Không tìm thấy sản phẩm cần xóa.")
 
     def search_product(self, keyword):
         keyword = keyword.lower()
