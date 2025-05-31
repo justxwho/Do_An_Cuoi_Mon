@@ -90,7 +90,7 @@ class ProductFetcher:
 
                     new_product = {
                         "id": new_id,
-                        "name": p['title'],
+                        "name": p.get('title', ''),
                         "price": str(p['price']),
                         "qty": str(random.randint(1, 999)),
                         "description": p.get('description', ''),
@@ -515,7 +515,7 @@ class ProductManagerApp:
             "Mô tả", "Link ảnh", "Đánh giá", "Số lượng mua"
         ]
 
-        keys = ['id', 'title', 'price', 'qty', 'description', 'image', 'rate', 'count']
+        keys = ['id', 'name', 'price', 'qty', 'description', 'image', 'rate', 'count']
         entries = {}
 
         for i, label in enumerate(labels):
@@ -543,7 +543,7 @@ class ProductManagerApp:
         # Hàm lưu
         def save_edit():
             try:
-                title = entries['title'].get()
+                title = entries['name'].get()
                 price = float(entries['price'].get())
                 qty = int(entries['qty'].get())
                 description = entries['description'].get()
@@ -569,7 +569,7 @@ class ProductManagerApp:
 
                 for product in products:
                     if product['id'] == product_id:
-                        product['title'] = title
+                        product['name'] = title
                         product['price'] = price
                         product['qty'] = qty
                         product['description'] = description
