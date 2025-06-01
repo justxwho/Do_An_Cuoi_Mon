@@ -1,0 +1,20 @@
+[
+    {
+        "username": "admin",
+        "password": "240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9",
+        "name": "Quản trị viên",
+        "role": "Quản trị viên"
+    },
+    {
+        "username": "user1",
+        "password": "e606e38b0d8c19b24cf0ee3808183162ea7cd63ff7912dbb22b5e803286b4446",
+        "name": "Người dùng",
+        "role": "Người dùng"
+    },
+    {
+        "username": "kimlong",
+        "password": "69142c3e945ca0df95bffce9a1ddb0bfd8e57d93eedd8eccf211c1851350f652",
+        "name": "Nguyễn Hữu Kim Long",
+        "role": "Người dùng"
+    }
+]

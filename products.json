@@ -7,8 +7,7 @@
         "description": "This is a high-quality Casio - Backpack Model 552 perfect for your needs.",
         "image": "image_products\\image-Casio_-_Backpack_Model_552.jpg",
         "rate": 2.94,
-        "count": 380,
-        "title": ""
+        "count": 380
     },
     {
         "id": "HY455",
@@ -18,8 +17,7 @@
         "description": "This is a high-quality Nike - Camera Model 310 perfect for your needs.",
         "image": "image_products\\image-Nike_-_Camera_Model_310.jpg",
         "rate": 1.97,
-        "count": 283,
-        "title": ""
+        "count": 283
     },
     {
         "id": "ZG519",
@@ -29,8 +27,7 @@
         "description": "This is a high-quality Apple - Backpack Model 635 perfect for your needs.",
         "image": "image_products\\image-Apple_-_Backpack_Model_635.jpg",
         "rate": 2.29,
-        "count": 346,
-        "title": ""
+        "count": 346
     },
     {
         "id": "JJ141",
@@ -40,8 +37,7 @@
         "description": "This is a high-quality Samsung - Laptop Model 182 perfect for your needs.",
         "image": "image_products\\image-Samsung_-_Laptop_Model_182.jpg",
         "rate": 4.58,
-        "count": 95,
-        "title": ""
+        "count": 95
     },
     {
         "id": "QA032",
@@ -51,8 +47,7 @@
         "description": "This is a high-quality Samsung - Laptop Model 965 perfect for your needs.",
         "image": "image_products\\image-Laptop_Model_965.jpg",
         "rate": 4.27,
-        "count": 302,
-        "title": ""
+        "count": 302
     },
     {
         "id": "GA180",
@@ -62,8 +57,7 @@
         "description": "This is a high-quality Ray-Ban - Sneakers Model 860 perfect for your needs.",
         "image": "image_products\\image-Ray-Ban_-_Sneakers_Model_860.jpg",
         "rate": 4.32,
-        "count": 466,
-        "title": ""
+        "count": 466
     },
     {
         "id": "LH376",
@@ -73,8 +67,7 @@
         "description": "This is a high-quality Fjallraven - Headphones Model 411 perfect for your needs.",
         "image": "image_products\\image-Fjallraven_-_Headphones_Model_411.jpg",
         "rate": 4.94,
-        "count": 386,
-        "title": ""
+        "count": 386
     },
     {
         "id": "JE625",
@@ -84,8 +77,7 @@
         "description": "This is a high-quality Apple - Watch Model 392 perfect for your needs.",
         "image": "image_products\\image-Apple_-_Watch_Model_392.jpg",
         "rate": 4.59,
-        "count": 207,
-        "title": ""
+        "count": 207
     },
     {
         "id": "KH932",
@@ -95,8 +87,7 @@
         "description": "This is a high-quality Adidas - Tablet Model 421 perfect for your needs.",
         "image": "image_products\\image-Adidas_-_Tablet_Model_421.jpg",
         "rate": 3.42,
-        "count": 207,
-        "title": ""
+        "count": 207
     },
     {
         "id": "MV613",
@@ -116,8 +107,7 @@
         "description": "This is a high-quality Samsung - T-shirt Model 234 perfect for your needs.",
         "image": "image_products\\image-Samsung_-_T-shirt_Model_234.jpg",
         "rate": 1.25,
-        "count": 287,
-        "title": ""
+        "count": 287
     },
     {
         "id": "KF512",

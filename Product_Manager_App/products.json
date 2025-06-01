@@ -1,0 +1,192 @@
+[
+    {
+        "id": "DF565",
+        "name": "Casio - Backpack Model 552",
+        "price": 410.02,
+        "qty": 69,
+        "description": "This is a high-quality Casio - Backpack Model 552 perfect for your needs.",
+        "image": "image_products\\image-Casio_-_Backpack_Model_552.jpg",
+        "rate": 2.94,
+        "count": 380
+    },
+    {
+        "id": "HY455",
+        "name": "Nike - Camera Model 310",
+        "price": 490.59,
+        "qty": 13,
+        "description": "This is a high-quality Nike - Camera Model 310 perfect for your needs.",
+        "image": "image_products\\image-Nike_-_Camera_Model_310.jpg",
+        "rate": 1.97,
+        "count": 283
+    },
+    {
+        "id": "ZG519",
+        "name": "Apple - Backpack Model 635",
+        "price": 238.21,
+        "qty": 28,
+        "description": "This is a high-quality Apple - Backpack Model 635 perfect for your needs.",
+        "image": "image_products\\image-Apple_-_Backpack_Model_635.jpg",
+        "rate": 2.29,
+        "count": 346
+    },
+    {
+        "id": "JJ141",
+        "name": "Samsung - Laptop Model 182",
+        "price": 120.32,
+        "qty": 80,
+        "description": "This is a high-quality Samsung - Laptop Model 182 perfect for your needs.",
+        "image": "image_products\\image-Samsung_-_Laptop_Model_182.jpg",
+        "rate": 4.58,
+        "count": 95
+    },
+    {
+        "id": "QA032",
+        "name": "Laptop Model 965",
+        "price": 73.77,
+        "qty": 96,
+        "description": "This is a high-quality Samsung - Laptop Model 965 perfect for your needs.",
+        "image": "image_products\\image-Laptop_Model_965.jpg",
+        "rate": 4.27,
+        "count": 302
+    },
+    {
+        "id": "GA180",
+        "name": "Ray-Ban - Sneakers Model 860",
+        "price": 16.82,
+        "qty": 28,
+        "description": "This is a high-quality Ray-Ban - Sneakers Model 860 perfect for your needs.",
+        "image": "image_products\\image-Ray-Ban_-_Sneakers_Model_860.jpg",
+        "rate": 4.32,
+        "count": 466
+    },
+    {
+        "id": "LH376",
+        "name": "Fjallraven - Headphones Model 411",
+        "price": 154.94,
+        "qty": 42,
+        "description": "This is a high-quality Fjallraven - Headphones Model 411 perfect for your needs.",
+        "image": "image_products\\image-Fjallraven_-_Headphones_Model_411.jpg",
+        "rate": 4.94,
+        "count": 386
+    },
+    {
+        "id": "JE625",
+        "name": "Apple - Watch Model 392",
+        "price": 300.87,
+        "qty": 15,
+        "description": "This is a high-quality Apple - Watch Model 392 perfect for your needs.",
+        "image": "image_products\\image-Apple_-_Watch_Model_392.jpg",
+        "rate": 4.59,
+        "count": 207
+    },
+    {
+        "id": "KH932",
+        "name": "Adidas - Tablet Model 421",
+        "price": 228.25,
+        "qty": 29,
+        "description": "This is a high-quality Adidas - Tablet Model 421 perfect for your needs.",
+        "image": "image_products\\image-Adidas_-_Tablet_Model_421.jpg",
+        "rate": 3.42,
+        "count": 207
+    },
+    {
+        "id": "MV613",
+        "name": "Ray-Ban - Smartphone Model 457",
+        "price": 208.31,
+        "qty": 8,
+        "description": "This is a high-quality Ray-Ban - Smartphone Model 457 perfect for your needs.",
+        "image": "image_products\\image-Ray-Ban_-_Smartphone_Model_457.jpg",
+        "rate": 2.3,
+        "count": 239
+    },
+    {
+        "id": "GO643",
+        "name": "Samsung - T-shirt Model 234",
+        "price": 371.22,
+        "qty": 55,
+        "description": "This is a high-quality Samsung - T-shirt Model 234 perfect for your needs.",
+        "image": "image_products\\image-Samsung_-_T-shirt_Model_234.jpg",
+        "rate": 1.25,
+        "count": 287
+    },
+    {
+        "id": "KF512",
+        "name": "Nike - Sneakers Model 847",
+        "price": 182.41,
+        "qty": 2,
+        "description": "This is a high-quality Nike - Sneakers Model 847 perfect for your needs.",
+        "image": "image_products\\image-Nike_-_Sneakers_Model_847.jpg",
+        "rate": 4.93,
+        "count": 60
+    },
+    {
+        "id": "WT705",
+        "name": "Ray-Ban - Headphones Model 877",
+        "price": 167.11,
+        "qty": 25,
+        "description": "This is a high-quality Ray-Ban - Headphones Model 877 perfect for your needs.",
+        "image": "image_products\\image-Ray-Ban_-_Headphones_Model_877.jpg",
+        "rate": 3.61,
+        "count": 279
+    },
+    {
+        "id": "YI314",
+        "name": "Adidas - Smartphone Model 770",
+        "price": 74.68,
+        "qty": 87,
+        "description": "This is a high-quality Adidas - Smartphone Model 770 perfect for your needs.",
+        "image": "image_products\\image-Adidas_-_Smartphone_Model_770.jpg",
+        "rate": 3.6,
+        "count": 241
+    },
+    {
+        "id": "AJ374",
+        "name": "Sony - Sneakers Model 796",
+        "price": 58.13,
+        "qty": 95,
+        "description": "This is a high-quality Sony - Sneakers Model 796 perfect for your needs.",
+        "image": "image_products\\image-Sony_-_Sneakers_Model_796.jpg",
+        "rate": 2.68,
+        "count": 66
+    },
+    {
+        "id": "ZT261",
+        "name": "Asus - Laptop Model 776",
+        "price": 244.42,
+        "qty": 32,
+        "description": "This is a high-quality Asus - Laptop Model 776 perfect for your needs.",
+        "image": "image_products\\image-Asus_-_Laptop_Model_776.jpg",
+        "rate": 2.63,
+        "count": 381
+    },
+    {
+        "id": "IM291",
+        "name": "Casio - T-shirt Model 437",
+        "price": 289.43,
+        "qty": 58,
+        "description": "This is a high-quality Casio - T-shirt Model 437 perfect for your needs.",
+        "image": "image_products\\image-Casio_-_T-shirt_Model_437.jpg",
+        "rate": 1.79,
+        "count": 470
+    },
+    {
+        "id": "CS290",
+        "name": "Adidas - T-shirt Model 938",
+        "price": 222.27,
+        "qty": 90,
+        "description": "This is a high-quality Adidas - T-shirt Model 938 perfect for your needs.",
+        "image": "image_products\\image-Adidas_-_T-shirt_Model_938.jpg",
+        "rate": 4.03,
+        "count": 371
+    },
+    {
+        "id": "UI226",
+        "name": "Apple - Headphones Model 414",
+        "price": 130.96,
+        "qty": 97,
+        "description": "This is a high-quality Apple - Headphones Model 414 perfect for your needs.",
+        "image": "image_products\\image-Apple_-_Headphones_Model_414.jpg",
+        "rate": 4.47,
+        "count": 43
+    }
+]
