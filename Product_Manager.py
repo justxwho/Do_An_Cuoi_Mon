@@ -78,9 +78,11 @@ class ProductFetcher:
     @staticmethod
     def fetch_from_api():
         try:
-            response = requests.get("https://fakestoreapi.com/products", verify=False)
+            response = requests.get("https://dummyjson.com/products", timeout=5)
             if response.status_code == 200:
-                api_products = response.json()
+                data = response.json()
+                api_products = data.get("products", [])
+
                 existing_products = JSONHandler.read(DATA_FILE)
                 existing_ids = {p['id'] for p in existing_products}
 
@@ -91,12 +93,12 @@ class ProductFetcher:
                     new_product = {
                         "id": new_id,
                         "name": p.get('title', ''),
-                        "price": str(p['price']),
-                        "qty": str(random.randint(1, 999)),
+                        "price": float(p.get('price', 0)),
+                        "qty": int(p.get('stock', random.randint(1, 999))),
                         "description": p.get('description', ''),
-                        "image": p.get('image', ''),
-                        "rate": str(p.get('rating', {}).get('rate', '')),
-                        "count": str(p.get('rating', {}).get('count', ''))
+                        "image": p.get('thumbnail', ''),
+                        "rate": float(p.get('rating', 0)),
+                        "count": random.randint(10, 500)
                     }
                     existing_products.append(new_product)
 
@@ -104,8 +106,9 @@ class ProductFetcher:
                 return True
             return False
         except Exception as e:
-            print("Error fetching from API:", e)
+            print("Lỗi khi lấy API DummyJSON:", e)
             return False
+
 
 class ProductManagerApp:
     def __init__(self, root):
