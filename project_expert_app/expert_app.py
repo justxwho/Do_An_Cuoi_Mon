@@ -1,215 +1,324 @@
-# expert_system.py
 import json
-import tkinter as tk
-from tkinter import ttk, scrolledtext, messagebox
-from collections import defaultdict
+import random
+import re
+import threading
+from collections import defaultdict, Counter
+from functools import partial
 
-KB_FILE = "knowledge_base.json"
+import numpy as np
+import pandas as pd
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import classification_report
 
-class KnowledgeBase:
-    def __init__(self, kb_file=KB_FILE):
-        with open(kb_file, "r", encoding="utf-8") as f:
-            self.rules = json.load(f)
-        # index rules by consequent for backward chaining
-        self.rules_by_consequent = defaultdict(list)
-        for r in self.rules:
-            self.rules_by_consequent[r["then"]].append(r)
+try:
+    import tkinter as tk
+    from tkinter import ttk, messagebox, scrolledtext
+except Exception as e:
+    print("Tkinter không khả dụng trong môi trường này:", e)
 
-class InferenceEngine:
-    def __init__(self, kb: KnowledgeBase):
+# -------------------------
+# 1. Knowledge base (JSON)
+# -------------------------
+KB_JSON = {
+    "diseases": [
+        {
+            "id": "cold",
+            "name": "Cảm lạnh",
+            "symptoms": ["ho","sổ mũi","hắt hơi","đau họng","mệt mỏi"],
+            "medications": ["Paracetamol","Thuốc nhỏ mũi"],
+            "advice": ["Nghỉ ngơi","Uống nhiều nước","Súc họng nước muối"]
+        },
+        {
+            "id": "flu",
+            "name": "Cúm",
+            "symptoms": ["sốt cao","đau đầu","đau cơ","ho","mệt mỏi"],
+            "medications": ["Paracetamol","Thuốc chống virut nếu cần"],
+            "advice": ["Nghỉ ngơi","Tránh tiếp xúc người khác"]
+        },
+        {
+            "id": "dengue",
+            "name": "Sốt xuất huyết",
+            "symptoms": ["sốt cao","đau đầu","đau cơ","xuất huyết da","mệt mỏi"],
+            "medications": ["Bù nước","Theo dõi tại cơ sở y tế"],
+            "advice": ["Đi khám ngay","Uống oresol nếu mất nước"]
+        },
+        {
+            "id": "strep_throat",
+            "name": "Viêm họng do liên cầu",
+            "symptoms": ["đau họng","sốt","khó nuốt","hạch cổ sưng"],
+            "medications": ["Kháng sinh (nếu do vi khuẩn)","Paracetamol"],
+            "advice": ["Đi khám để làm test", "Súc họng nước muối"]
+        },
+        {
+            "id": "covid",
+            "name": "COVID-19",
+            "symptoms": ["sốt","ho","mất vị giác","mất khứu giác","mệt mỏi"],
+            "medications": ["Theo hướng dẫn y tế địa phương"],
+            "advice": ["Cách ly","Làm test PCR/rapid"]
+        }
+    ]
+}
+
+# Lưu ra file JSON nếu cần (tuỳ chọn)
+with open('knowledge_base.json', 'w', encoding='utf8') as f:
+    json.dump(KB_JSON, f, ensure_ascii=False, indent=2)
+
+# -------------------------
+# 2. Rule-based system
+# -------------------------
+
+class Rule:
+    def __init__(self, disease_id, required_symptoms):
+        self.disease_id = disease_id
+        self.required_symptoms = set(self._normalize(s) for s in required_symptoms)
+
+    def _normalize(self, text):
+        return text.strip().lower()
+
+    def matches(self, facts):
+        facts_norm = set(self._normalize(s) for s in facts)
+        matched = len(self.required_symptoms & facts_norm)
+        total = len(self.required_symptoms)
+        score = matched / total if total else 0
+        return score, matched, total
+
+
+class ExpertSystem:
+    def __init__(self, kb):
         self.kb = kb
+        self.rules = [Rule(d['id'], d['symptoms']) for d in kb['diseases']]
+        # map id->disease
+        self.disease_map = {d['id']: d for d in kb['diseases']}
 
-    def forward_chain(self, facts):
-        """
-        Simple forward chaining:
-        - For each rule, if all antecedents in facts -> conclude consequent.
-        - Return list of (conclusion, confidence, rule_id, explanation)
-        """
-        conclusions = []
-        for r in self.kb.rules:
-            antecedents = r.get("if", [])
-            if all(a in facts for a in antecedents):
-                conclusions.append({
-                    "conclusion": r["then"],
-                    "confidence": r.get("confidence", 1.0),
-                    "rule_id": r.get("id"),
-                    "explanation": r.get("explanation", "")
-                })
-        # aggregate by conclusion (take max confidence if multiple rules)
-        agg = {}
-        for c in conclusions:
-            key = c["conclusion"]
-            if key not in agg or c["confidence"] > agg[key]["confidence"]:
-                agg[key] = c
-        # sort by confidence desc
-        return sorted(agg.values(), key=lambda x: x["confidence"], reverse=True)
+    def forward_chaining(self, facts, topk=3):
+        scores = []
+        for r in self.rules:
+            score, matched, total = r.matches(facts)
+            scores.append((r.disease_id, score, matched, total))
+        scores.sort(key=lambda x: x[1], reverse=True)
+        results = []
+        for disease_id, score, matched, total in scores[:topk]:
+            d = self.disease_map[disease_id]
+            results.append({
+                'id': disease_id,
+                'name': d['name'],
+                'score': round(score, 3),
+                'matched': matched,
+                'total': total,
+                'medications': d.get('medications', []),
+                'advice': d.get('advice', [])
+            })
+        return results
 
-    def backward_chain(self, goal, known_facts, trace=None, visited=None):
-        """
-        Backward chaining attempt to prove 'goal' from known_facts using rules.
-        Returns (proved:bool, confidence:float, trace:list)
-        - confidence is product of confidences along the proof path (approximation).
-        - trace collects steps.
-        """
-        if trace is None:
-            trace = []
-        if visited is None:
-            visited = set()
+    def backward_chaining(self, goal_disease_id, facts):
+        rule = next((r for r in self.rules if r.disease_id == goal_disease_id), None)
+        if not rule:
+            return None
+        facts_norm = set(s.strip().lower() for s in facts)
+        missing = list(rule.required_symptoms - facts_norm)
+        return {
+            'disease_id': goal_disease_id,
+            'missing_symptoms': missing,
+            'is_satisfied': len(missing) == 0
+        }
 
-        # If goal already in known_facts
-        if goal in known_facts:
-            trace.append(f"Goal '{goal}' is in known facts.")
-            return True, 1.0, trace
+# -------------------------
+# 3. Tạo dataset giả lập từ KB cho ML baseline
+# -------------------------
 
-        if goal in visited:
-            trace.append(f"Already tried '{goal}', avoid loop.")
-            return False, 0.0, trace
-        visited.add(goal)
+def generate_synthetic_dataset(kb, n_samples_per_disease=300, noise_rate=0.2):
+    diseases = kb['diseases']
+    all_symptoms = sorted({s for d in diseases for s in d['symptoms']})
+    rows = []
+    for d in diseases:
+        for _ in range(n_samples_per_disease):
+            # chọn subset của triệu chứng thật
+            present = [s for s in d['symptoms'] if random.random() > 0.2]
+            # thêm noise: triệu chứng từ các bệnh khác
+            if random.random() < noise_rate:
+                other = random.choice(diseases)
+                extra = random.choice(other['symptoms'])
+                if extra not in present:
+                    present.append(extra)
+            # đôi khi có triệu chứng ngẫu nhiên
+            if random.random() < 0.05:
+                extra = random.choice(all_symptoms)
+                if extra not in present:
+                    present.append(extra)
+            text = ", ".join(present)
+            rows.append({'text': text, 'label': d['id']})
+    df = pd.DataFrame(rows)
+    return df
 
-        rules = self.kb.rules_by_consequent.get(goal, [])
-        if not rules:
-            trace.append(f"No rules conclude '{goal}'. Cannot prove.")
-            return False, 0.0, trace
+# -------------------------
+# 4. ML baseline: train LR and RF
+# -------------------------
 
-        # try each rule that can conclude goal
-        best_conf = 0.0
-        best_trace = None
-        proved_any = False
-        for r in rules:
-            trace_local = trace.copy()
-            trace_local.append(f"Trying rule {r.get('id')}: if {r.get('if')} then {r.get('then')} (c={r.get('confidence')})")
-            antecedents = r.get("if", [])
-            all_proved = True
-            conf_product = r.get("confidence", 1.0)
-            # prove each antecedent
-            for ant in antecedents:
-                proved, conf, trace_ant = self.backward_chain(ant, known_facts, trace=[], visited=visited)
-                trace_local.extend(["  "+t for t in trace_ant])
-                if not proved:
-                    all_proved = False
-                    break
-                else:
-                    conf_product *= conf
-            if all_proved:
-                trace_local.append(f"Rule {r.get('id')} proves '{goal}' with confidence approx {conf_product:.3f}")
-                proved_any = True
-                if conf_product > best_conf:
-                    best_conf = conf_product
-                    best_trace = trace_local
+class MLBaseline:
+    def __init__(self):
+        self.vectorizer = CountVectorizer(token_pattern=r"(?u)\b[^,]+\b")
+        self.lr = LogisticRegression(max_iter=1000)
+        self.rf = RandomForestClassifier(n_estimators=100)
+        self.trained = False
+        self.label_map = None
+        self.inv_label_map = None
 
-        if proved_any:
-            return True, best_conf, best_trace
-        else:
-            trace.append(f"No rule could prove '{goal}' with given facts.")
-            return False, 0.0, trace
+    def fit(self, texts, labels):
+        X = self.vectorizer.fit_transform(texts)
+        # label encoding
+        uniq = sorted(list(set(labels)))
+        self.label_map = {l: i for i, l in enumerate(uniq)}
+        self.inv_label_map = {v: k for k, v in self.label_map.items()}
+        y = np.array([self.label_map[l] for l in labels])
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+        print("Training Logistic Regression...")
+        self.lr.fit(X_train, y_train)
+        print("Training Random Forest...")
+        self.rf.fit(X_train, y_train)
+        # report
+        preds_lr = self.lr.predict(X_test)
+        preds_rf = self.rf.predict(X_test)
+        print("== Logistic Regression Report ==")
+        print(classification_report(y_test, preds_lr, target_names=uniq))
+        print("== Random Forest Report ==")
+        print(classification_report(y_test, preds_rf, target_names=uniq))
+        self.trained = True
 
-# --- GUI ---
-class ExpertSystemApp:
-    def __init__(self, master):
-        self.master = master
-        master.title("Hệ chuyên gia chẩn đoán bệnh - Demo")
-        master.geometry("800x520")
+    def predict_proba(self, text, topk=3):
+        if not self.trained:
+            return []
+        X = self.vectorizer.transform([text])
+        proba_lr = self.lr.predict_proba(X)[0]
+        proba_rf = self.rf.predict_proba(X)[0]
+        # average probas
+        avg = (proba_lr + proba_rf) / 2.0
+        pairs = [(self.inv_label_map[i], avg[i]) for i in range(len(avg))]
+        pairs.sort(key=lambda x: x[1], reverse=True)
+        return pairs[:topk]
 
-        self.kb = KnowledgeBase()
-        self.engine = InferenceEngine(self.kb)
+# -------------------------
+# 5. GUI (Tkinter)
+# -------------------------
 
-        # collect all symptoms from KB
-        self.symptoms = sorted({s for r in self.kb.rules for s in r.get("if", [])})
+class DiagnosisApp:
+    def __init__(self, root, expert_system, ml_baseline):
+        self.root = root
+        self.expert = expert_system
+        self.ml = ml_baseline
+        self.root.title('Hệ chuyên gia hỗ trợ chẩn đoán - Demo')
+        self._build_ui()
 
-        left = ttk.Frame(master, padding=10)
-        left.pack(side=tk.LEFT, fill=tk.Y)
+    def _build_ui(self):
+        frm = ttk.Frame(self.root, padding=10)
+        frm.grid()
 
-        ttk.Label(left, text="Chọn triệu chứng (tích nhiều):").pack(anchor="w")
-        self.vars = {}
-        self.checkbuttons = []
-        cb_frame = ttk.Frame(left)
-        cb_frame.pack(fill=tk.Y, expand=True)
-        for s in self.symptoms:
-            v = tk.IntVar(value=0)
-            cb = ttk.Checkbutton(cb_frame, text=s, variable=v)
-            cb.pack(anchor="w")
-            self.vars[s] = v
-            self.checkbuttons.append(cb)
+        ttk.Label(frm, text='Nhập triệu chứng (ngăn cách bằng phẩy):').grid(column=0, row=0, sticky='w')
+        self.input_text = scrolledtext.ScrolledText(frm, width=60, height=4)
+        self.input_text.grid(column=0, row=1, pady=6)
 
-        btn_frame = ttk.Frame(left, padding=(0,10))
-        btn_frame.pack(fill=tk.X)
-        ttk.Button(btn_frame, text="Gợi ý (Suy diễn tiến)", command=self.on_forward).pack(fill=tk.X, pady=4)
-        ttk.Button(btn_frame, text="Kiểm tra bệnh (Suy diễn lùi)", command=self.on_backward_popup).pack(fill=tk.X)
+        btn_frame = ttk.Frame(frm)
+        btn_frame.grid(column=0, row=2, sticky='w')
+        ttk.Button(btn_frame, text='Chẩn đoán (Rule-based)', command=self.on_diagnose_rule).grid(column=0, row=0)
+        ttk.Button(btn_frame, text='Chẩn đoán (ML baseline)', command=self.on_diagnose_ml).grid(column=1, row=0, padx=8)
+        ttk.Button(btn_frame, text='Chạy cả 2 (so sánh)', command=self.on_compare).grid(column=2, row=0)
 
-        # Right panel: results and trace
-        right = ttk.Frame(master, padding=10)
-        right.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
+        ttk.Label(frm, text='Kết quả:').grid(column=0, row=3, sticky='w', pady=(10,0))
+        self.result_box = scrolledtext.ScrolledText(frm, width=60, height=15)
+        self.result_box.grid(column=0, row=4, pady=6)
 
-        ttk.Label(right, text="Kết quả gợi ý:").pack(anchor="w")
-        self.result_box = ttk.Treeview(right, columns=("conf", "rule"), show="headings", height=6)
-        self.result_box.heading("conf", text="Độ tin cậy")
-        self.result_box.heading("rule", text="Rule ID")
-        self.result_box.pack(fill=tk.X)
+    def _get_input_symptoms(self):
+        raw = self.input_text.get('1.0', 'end').strip()
+        if not raw:
+            return []
+        parts = [p.strip().lower() for p in raw.split(',') if p.strip()]
+        return parts
 
-        ttk.Label(right, text="Giải thích / Trace:").pack(anchor="w", pady=(8,0))
-        self.trace = scrolledtext.ScrolledText(right, height=18)
-        self.trace.pack(fill=tk.BOTH, expand=True)
-
-        # bottom actions
-        bottom = ttk.Frame(master, padding=6)
-        bottom.pack(side=tk.BOTTOM, fill=tk.X)
-        ttk.Button(bottom, text="Xóa chọn", command=self.clear_all).pack(side=tk.LEFT)
-        ttk.Button(bottom, text="Thoát", command=master.quit).pack(side=tk.RIGHT)
-
-    def get_selected_symptoms(self):
-        return [s for s,v in self.vars.items() if v.get()==1]
-
-    def on_forward(self):
-        facts = self.get_selected_symptoms()
-        self.trace.delete("1.0", tk.END)
-        self.result_box.delete(*self.result_box.get_children())
+    def on_diagnose_rule(self):
+        facts = self._get_input_symptoms()
         if not facts:
-            messagebox.showinfo("Chú ý", "Vui lòng chọn ít nhất 1 triệu chứng.")
+            messagebox.showinfo('Thiếu dữ liệu', 'Vui lòng nhập ít nhất một triệu chứng.')
             return
-        self.trace.insert(tk.END, f"Facts (triệu chứng): {facts}\n\n")
-        results = self.engine.forward_chain(facts)
-        if not results:
-            self.trace.insert(tk.END, "Không tìm thấy chẩn đoán phù hợp với luật hiện có.\n")
+        res = self.expert.forward_chaining(facts, topk=5)
+        self._display_rule_results(res)
+
+    def on_diagnose_ml(self):
+        facts = self._get_input_symptoms()
+        if not facts:
+            messagebox.showinfo('Thiếu dữ liệu', 'Vui lòng nhập ít nhất một triệu chứng.')
             return
-        self.trace.insert(tk.END, "Kết luận tìm được (theo độ tin cậy giảm dần):\n")
+        text = ", ".join(facts)
+        preds = self.ml.predict_proba(text, topk=5)
+        self._display_ml_results(preds)
+
+    def on_compare(self):
+        facts = self._get_input_symptoms()
+        if not facts:
+            messagebox.showinfo('Thiếu dữ liệu', 'Vui lòng nhập ít nhất một triệu chứng.')
+            return
+        self.result_box.delete('1.0', 'end')
+        # Rule-based
+        rb = self.expert.forward_chaining(facts, topk=5)
+        self.result_box.insert('end', '*** Rule-based (Forward chaining) ***\n')
+        for r in rb:
+            self.result_box.insert('end', f"{r['name']} - score: {r['score']} ({r['matched']}/{r['total']})\n")
+            self.result_box.insert('end', f"  Thuốc: {', '.join(r['medications'])}\n")
+            self.result_box.insert('end', f"  Giải pháp: {', '.join(r['advice'])}\n")
+        self.result_box.insert('end', '\n')
+        # ML
+        text = ", ".join(facts)
+        preds = self.ml.predict_proba(text, topk=5)
+        self.result_box.insert('end', '*** ML baseline (LR + RF average) ***\n')
+        for pid, p in preds:
+            d = self.expert.disease_map[pid]
+            self.result_box.insert('end', f"{d['name']} - prob: {p:.3f}\n")
+            self.result_box.insert('end', f"  Thuốc: {', '.join(d.get('medications', []))}\n")
+            self.result_box.insert('end', f"  Giải pháp: {', '.join(d.get('advice', []))}\n")
+
+    def _display_rule_results(self, results):
+        self.result_box.delete('1.0', 'end')
+        self.result_box.insert('end', 'Top kết quả từ hệ chuyên gia:\n')
         for r in results:
-            self.result_box.insert("", tk.END, values=(f"{r['confidence']:.2f}", r['rule_id']))
-            self.trace.insert(tk.END, f"- {r['conclusion']} (conf={r['confidence']:.2f}) bằng {r['rule_id']}: {r['explanation']}\n")
+            self.result_box.insert('end', f"- {r['name']}  (score={r['score']}, matched={r['matched']}/{r['total']})\n")
+            self.result_box.insert('end', f"   Thuốc: {', '.join(r['medications'])}\n")
+            self.result_box.insert('end', f"   Giải pháp: {', '.join(r['advice'])}\n")
 
-    def on_backward_popup(self):
-        popup = tk.Toplevel(self.master)
-        popup.title("Suy diễn lùi - Kiểm tra một chẩn đoán")
-        popup.geometry("360x160")
-        ttk.Label(popup, text="Nhập tên chẩn đoán cần kiểm tra (ví dụ: cam_cum):").pack(padx=8, pady=(8,4), anchor="w")
-        entry = ttk.Entry(popup)
-        entry.pack(fill=tk.X, padx=8)
-        def do_check():
-            goal = entry.get().strip()
-            if not goal:
-                messagebox.showinfo("Chú ý", "Nhập tên chẩn đoán.")
-                return
-            facts = self.get_selected_symptoms()
-            self.trace.delete("1.0", tk.END)
-            self.result_box.delete(*self.result_box.get_children())
-            self.trace.insert(tk.END, f"Known facts: {facts}\n\n")
-            proved, conf, trace = self.engine.backward_chain(goal, set(facts))
-            self.trace.insert(tk.END, f"Backward chaining result for '{goal}':\n")
-            self.trace.insert(tk.END, "\n".join(trace) + "\n\n")
-            if proved:
-                self.trace.insert(tk.END, f"--> Có thể chứng minh '{goal}' (độ tin cậy xấp xỉ {conf:.3f})\n")
-            else:
-                self.trace.insert(tk.END, f"--> Không chứng minh được '{goal}' với các dữ kiện hiện có.\n")
-            popup.destroy()
-        ttk.Button(popup, text="Kiểm tra", command=do_check).pack(pady=10)
+    def _display_ml_results(self, preds):
+        self.result_box.delete('1.0', 'end')
+        self.result_box.insert('end', 'Kết quả ML baseline:\n')
+        for pid, p in preds:
+            d = self.expert.disease_map[pid]
+            self.result_box.insert('end', f"- {d['name']} (prob={p:.3f})\n")
+            self.result_box.insert('end', f"   Thuốc: {', '.join(d.get('medications', []))}\n")
+            self.result_box.insert('end', f"   Giải pháp: {', '.join(d.get('advice', []))}\n")
 
-    def clear_all(self):
-        for v in self.vars.values():
-            v.set(0)
-        self.result_box.delete(*self.result_box.get_children())
-        self.trace.delete("1.0", tk.END)
+# -------------------------
+# 6. Main: đào tạo ML trên dataset giả lập và khởi chạy GUI
+# -------------------------
 
+def main():
+    print('Tạo bộ dữ liệu giả lập từ knowledge base...')
+    df = generate_synthetic_dataset(KB_JSON, n_samples_per_disease=400, noise_rate=0.25)
+    print('Số mẫu:', len(df))
+    # shuffle
+    df = df.sample(frac=1, random_state=42).reset_index(drop=True)
 
-if __name__ == "__main__":
-    root = tk.Tk()
-    app = ExpertSystemApp(root)
-    root.mainloop()
+    ml = MLBaseline()
+    # train (in thread nếu GUI cần phản hồi nhanh)
+    def train_and_start():
+        ml.fit(df['text'].tolist(), df['label'].tolist())
+        print('Huấn luyện xong. Khởi chạy GUI...')
+        # start GUI in main thread
+        root = tk.Tk()
+        expert = ExpertSystem(KB_JSON)
+        app = DiagnosisApp(root, expert, ml)
+        root.mainloop()
+
+    # Đào tạo có thể mất vài giây -> dùng thread để không block stdout
+    t = threading.Thread(target=train_and_start)
+    t.start()
+
+if __name__ == '__main__':
+    main()
